@@ -1,6 +1,6 @@
 {
-  "name": "herdr-office-32bit-retro-art",
-  "version": "2.0.0",
+  "name": "herdr-office-final-fantasy-art",
+  "version": "3.0.0",
   "tileSize": 32,
   "tileset": {
     "path": "/assets/tiles/office_tiles.png",
@@ -15,6 +15,12 @@
       },
       "floor_carpet": {
         "x": 32,
+        "y": 0,
+        "w": 32,
+        "h": 32
+      },
+      "floor_stone": {
+        "x": 64,
         "y": 0,
         "w": 32,
         "h": 32
@@ -37,8 +43,20 @@
         "w": 32,
         "h": 48
       },
+      "wall_bookshelf": {
+        "x": 160,
+        "y": 0,
+        "w": 32,
+        "h": 48
+      },
       "wall_whiteboard": {
         "x": 160,
+        "y": 0,
+        "w": 32,
+        "h": 48
+      },
+      "crystal": {
+        "x": 192,
         "y": 0,
         "w": 32,
         "h": 48
@@ -61,8 +79,20 @@
         "w": 32,
         "h": 32
       },
+      "potions": {
+        "x": 96,
+        "y": 64,
+        "w": 32,
+        "h": 48
+      },
       "plant": {
         "x": 96,
+        "y": 64,
+        "w": 32,
+        "h": 48
+      },
+      "chest": {
+        "x": 128,
         "y": 64,
         "w": 32,
         "h": 48
@@ -73,29 +103,29 @@
         "w": 32,
         "h": 48
       },
+      "astronomy": {
+        "x": 160,
+        "y": 64,
+        "w": 32,
+        "h": 48
+      },
       "espresso_bar": {
         "x": 160,
         "y": 64,
         "w": 32,
         "h": 48
       },
-      "bubble_blocked": {
+      "ff_dialog": {
         "x": 192,
         "y": 64,
         "w": 32,
         "h": 32
       },
-      "bubble_done": {
+      "cursor_hand": {
         "x": 224,
         "y": 64,
-        "w": 32,
-        "h": 32
-      },
-      "bubble_working": {
-        "x": 0,
-        "y": 128,
-        "w": 32,
-        "h": 32
+        "w": 16,
+        "h": 16
       }
     }
   },
@@ -159,6 +189,16 @@
         ],
         "frameRate": 6
       },
+      "cast_magic": {
+        "row": 5,
+        "frames": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "frameRate": 8
+      },
       "type_up": {
         "row": 5,
         "frames": [
@@ -171,6 +211,16 @@
       },
       "alert": {
         "row": 6,
+        "frames": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "frameRate": 4
+      },
+      "victory": {
+        "row": 7,
         "frames": [
           0,
           1,
