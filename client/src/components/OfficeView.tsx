@@ -370,27 +370,30 @@ export const OfficeView: React.FC = () => {
         style={{
           flex: 1,
           display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
           overflow: 'auto',
-          background: '#04060d',
+          background: '#080d1a',
           position: 'relative',
-          padding: '20px',
+          padding: '16px',
         }}
       >
         {!assets ? (
-          <div style={{ color: '#94a3b8', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div style={{ margin: 'auto', color: '#94a3b8', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span style={{ display: 'inline-block', animation: 'spin 1s linear infinite' }}>⠋</span>
-            Loading modern pixel office assets...
+            Loading 2.5D simulation assets...
           </div>
         ) : (
           <canvas
             ref={canvasRef}
             style={{
-              boxShadow: '0 16px 48px rgba(0, 0, 0, 0.95), 0 0 20px rgba(6, 182, 212, 0.15)',
-              borderRadius: '4px',
+              margin: 'auto',
+              boxShadow: '0 20px 50px rgba(0, 0, 0, 0.8), 0 0 24px rgba(56, 189, 248, 0.12)',
+              borderRadius: '6px',
+              border: '1px solid #1e293b',
               imageRendering: 'pixelated',
               cursor: 'pointer',
+              maxWidth: '100%',
+              maxHeight: '100%',
+              objectFit: 'contain',
             }}
           />
         )}

@@ -674,8 +674,8 @@ export class OfficeCanvasEngine {
     ctx.strokeStyle = '#78350f'; // Warm oak baseboard
     ctx.lineWidth = 3;
     ctx.beginPath();
-    ctx.moveTo(originX, originY - 1);
-    ctx.lineTo(nwEnd.x, nwEnd.y - 1);
+    ctx.moveTo(originX, originY);
+    ctx.lineTo(nwEnd.x, nwEnd.y);
     ctx.stroke();
 
     // North-East Wall (runs col 0, row 0..13 down-left)
@@ -700,8 +700,8 @@ export class OfficeCanvasEngine {
     ctx.strokeStyle = '#5c2b09';
     ctx.lineWidth = 3;
     ctx.beginPath();
-    ctx.moveTo(originX, originY - 1);
-    ctx.lineTo(neEnd.x, neEnd.y - 1);
+    ctx.moveTo(originX, originY);
+    ctx.lineTo(neEnd.x, neEnd.y);
     ctx.stroke();
 
     // Render Wall Inset Props & Windows on NW Wall
@@ -714,21 +714,15 @@ export class OfficeCanvasEngine {
       }
     }
 
-    // Render Wall Props on NE Wall (Bookshelves, Dashboard, Art)
-    for (let r = 1; r < OFFICE_ROWS; r++) {
-      const cell = map[r][0];
-      const tileMeta = tiles[cell.type] || tiles.wall_bookshelf;
-      if (tileMeta && cell.type !== 'wall_top') {
-        const iso = gridToIso(0, r, originX, originY);
-        ctx.drawImage(tileset, tileMeta.x, tileMeta.y, tileMeta.w, tileMeta.h, iso.x - 32, iso.y - 74, tileMeta.w, tileMeta.h);
-      }
-    }
-
-    // 3. Render 2.5D Isometric Floor Tiles (rows 1..13, cols 1..15)
-    for (let r = 1; r < OFFICE_ROWS; r++) {
-      for (let c = 1; c < OFFICE_COLS; c++) {
+    // 3. Render 2.5D Isometric Floor Tiles (Complete seamless coverage)
+    for (let r = 0; r < OFFICE_ROWS; r++) {
+      for (let c = 0; c < OFFICE_COLS; c++) {
         const cell = map[r][c];
-        const tileMeta = tiles[cell.type] || tiles.floor_wood;
+        let tileType = cell.type;
+        if (tileType.startsWith('wall_')) {
+          tileType = (c >= 11 && r <= 5) ? 'floor_tile' : ((c >= 2 && c <= 10) ? 'floor_carpet' : 'floor_wood');
+        }
+        const tileMeta = tiles[tileType] || tiles.floor_wood;
         if (tileMeta) {
           const iso = gridToIso(c, r, originX, originY);
           ctx.drawImage(tileset, tileMeta.x, tileMeta.y, tileMeta.w, tileMeta.h, iso.x - 32, iso.y, tileMeta.w, tileMeta.h);
