@@ -1,12 +1,92 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { HerdrConnector, extractTerminalDetails } from '../src/herdrConnector.js';
+import fs from 'node:fs';
+import path from 'node:path';
+import os from 'node:os';
+import {
+  HerdrConnector,
+  extractTerminalDetails,
+  extractSessionInfo,
+  readChunk,
+} from '../src/herdrConnector.js';
 
 describe('HerdrConnector', () => {
-  it('instantiates with default poll interval', () => {
-    const connector = new HerdrConnector();
+  it('instantiates with default poll interval and adapts to client count', () => {
+    const connector = new HerdrConnector({ activePollIntervalMs: 1200, idlePollIntervalMs: 8000 });
     assert.equal(connector.getAgents().length, 0);
     assert.equal(connector.getConnected(), false);
+    assert.equal(connector.getClientCount(), 0);
+    // When 0 clients are connected, it should use idle poll interval
+    assert.equal(connector.getEffectivePollInterval(), 8000);
+
+    // When client connects, effective interval switches to active interval
+    connector.setClientCount(1);
+    assert.equal(connector.getClientCount(), 1);
+    assert.equal(connector.getEffectivePollInterval(), 1200);
+
+    // When all clients disconnect, reverts to idle interval
+    connector.setClientCount(0);
+    assert.equal(connector.getEffectivePollInterval(), 8000);
+  });
+
+  it('readChunk and extractSessionInfo buffer only chunk tail on large files', () => {
+    const tmpDir = os.tmpdir();
+    const testSessionFile = path.join(tmpDir, `test-session-${Date.now()}.jsonl`);
+
+    try {
+      // Create a simulated large session file (>70KB)
+      const lines: string[] = [];
+      lines.push(
+        JSON.stringify({
+          type: 'message',
+          message: { role: 'user', content: 'Initial user prompt at head of file' },
+        })
+      );
+
+      // Pad with intermediate messages to exceed 70KB
+      const paddingMsg = JSON.stringify({
+        type: 'message',
+        message: { role: 'assistant', content: 'padding '.repeat(50) },
+      });
+      for (let i = 0; i < 200; i++) {
+        lines.push(paddingMsg);
+      }
+
+      // Latest assistant task at tail
+      lines.push(
+        JSON.stringify({
+          type: 'message',
+          message: {
+            role: 'assistant',
+            content: [
+              {
+                type: 'toolCall',
+                name: 'edit',
+                arguments: { path: 'server/src/herdrConnector.ts' },
+              },
+            ],
+          },
+        })
+      );
+
+      fs.writeFileSync(testSessionFile, lines.join('\n'), 'utf8');
+      const stat = fs.statSync(testSessionFile);
+      assert.ok(stat.size > 65536, `File size should exceed 64KB, got ${stat.size}`);
+
+      // Test readChunk
+      const tailChunk = readChunk(testSessionFile, { length: 1024 });
+      assert.ok(tailChunk.length <= 1024);
+      assert.ok(tailChunk.includes('edit'));
+
+      // Test extractSessionInfo with tail buffering + head prompt fallback
+      const sessionInfo = extractSessionInfo(testSessionFile);
+      assert.equal(sessionInfo.prompt, 'Initial user prompt at head of file');
+      assert.ok(sessionInfo.task?.startsWith('edit: server/src/herdrConnector.ts'));
+    } finally {
+      if (fs.existsSync(testSessionFile)) {
+        fs.unlinkSync(testSessionFile);
+      }
+    }
   });
 
   it('extractTerminalDetails parses tasks, summaries, and blockers', () => {
@@ -73,27 +153,19 @@ Error: got status: INTERNAL. {"error":{"code":500,"message":"Internal error enco
     assert.deepEqual(cachedReport, report);
   });
 
-  it('sendAgentMessage resolves sender and receiver and returns AgentMessageEvent', async () => {
+  it('sendAgentMessage handles message event formatting and delivery attempts', async () => {
     const connector = new HerdrConnector();
-    await connector.pollOnce();
-    const agents = connector.getAgents();
+    const event = await connector.sendAgentMessage({
+      fromPaneId: 'test-src-mock',
+      toPaneId: 'test-dst-mock',
+      message: 'Hello from mock test',
+      taskType: 'sync',
+    });
 
-    if (agents.length >= 2) {
-      const from = agents[0];
-      const to = agents[1];
-      // Test message event format without crashing even if CLI command fails
-      const event = await connector.sendAgentMessage({
-        fromPaneId: from.paneId,
-        toPaneId: to.paneId,
-        message: 'Hello from test',
-        taskType: 'sync',
-      });
-
-      assert.ok(event.id);
-      assert.equal(event.fromPaneId, from.paneId);
-      assert.equal(event.toPaneId, to.paneId);
-      assert.equal(event.message, 'Hello from test');
-      assert.ok(['delivered', 'failed'].includes(event.status));
-    }
+    assert.ok(event.id);
+    assert.equal(event.fromPaneId, 'test-src-mock');
+    assert.equal(event.toPaneId, 'test-dst-mock');
+    assert.equal(event.message, 'Hello from mock test');
+    assert.ok(['delivered', 'failed'].includes(event.status));
   });
 });

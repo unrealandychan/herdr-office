@@ -4,8 +4,9 @@ import { WebSocket } from 'ws';
 import { connector, httpServer, wss } from '../src/index.js';
 
 describe('Server REST and WebSocket APIs', () => {
-  const baseUrl = 'http://localhost:4000';
-  const wsUrl = 'ws://localhost:4000';
+  const testPort = process.env.PORT || '4003';
+  const baseUrl = `http://localhost:${testPort}`;
+  const wsUrl = `ws://localhost:${testPort}`;
 
   after(() => {
     connector.stop();

@@ -175,7 +175,7 @@ const httpServer = http.createServer(async (req, res) => {
 });
 
 const wss = new WebSocketServer({ server: httpServer });
-const connector = new HerdrConnector({ pollIntervalMs: 500 });
+const connector = new HerdrConnector();
 
 console.log(`[herdr-office-server] Starting Herdr Office backend on port ${port}...`);
 
@@ -245,6 +245,7 @@ connector.on('workspace_sync', (report) => {
 // Client connections
 wss.on('connection', (ws) => {
   console.log('[herdr-office-server] Client connected to WebSocket');
+  connector.setClientCount(wss.clients.size);
 
   // Send initial state immediately
   const initialStateMsg: ServerMessage = {
@@ -356,6 +357,7 @@ wss.on('connection', (ws) => {
 
   ws.on('close', () => {
     console.log('[herdr-office-server] Client disconnected');
+    connector.setClientCount(wss.clients.size);
   });
 });
 

@@ -10,7 +10,7 @@ export const OfficeView: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const engineRef = useRef<OfficeCanvasEngine | null>(null);
   const [assets, setAssets] = useState<LoadedAssets | null>(null);
-  const [scale, setScale] = useState(2);
+  const [scale, setScale] = useState(1.25);
   const [selectedPaneId, setSelectedPaneId] = useState<string | null>(null);
   const [isSpawnModalOpen, setIsSpawnModalOpen] = useState(false);
   const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
@@ -208,7 +208,7 @@ export const OfficeView: React.FC = () => {
                   fontWeight: 700,
                 }}
               >
-                2D PIXEL ART
+                2.5D SIMULATION
               </span>
             </h1>
           </div>
@@ -326,7 +326,7 @@ export const OfficeView: React.FC = () => {
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
             <span style={{ fontSize: '0.72rem', color: '#94a3b8', marginRight: '2px' }}>Scale:</span>
-            {[1.5, 2, 2.5, 3].map((s) => (
+            {[1, 1.25, 1.5, 2].map((s) => (
               <button
                 key={s}
                 onClick={() => setScale(s)}

@@ -1,143 +1,193 @@
 {
-  "name": "herdr-office-pixel-art",
-  "version": "4.0.0",
+  "name": "herdr-office-2.5d-isometric",
+  "version": "5.0.0",
   "tileSize": 32,
+  "isoTileWidth": 64,
+  "isoTileHeight": 32,
   "tileset": {
     "path": "/assets/tiles/office_tiles.png",
-    "width": 256,
-    "height": 256,
+    "width": 512,
+    "height": 512,
     "tiles": {
       "floor_wood": {
         "x": 0,
         "y": 0,
-        "w": 32,
+        "w": 64,
         "h": 32
       },
       "floor_carpet": {
-        "x": 32,
+        "x": 64,
         "y": 0,
-        "w": 32,
+        "w": 64,
         "h": 32
       },
       "floor_tile": {
-        "x": 64,
+        "x": 128,
         "y": 0,
-        "w": 32,
+        "w": 64,
         "h": 32
       },
       "floor_stone": {
-        "x": 64,
-        "y": 0,
-        "w": 32,
-        "h": 32
-      },
-      "wall_top": {
-        "x": 96,
-        "y": 0,
-        "w": 32,
-        "h": 48
-      },
-      "wall_window": {
         "x": 128,
         "y": 0,
-        "w": 32,
-        "h": 48
+        "w": 64,
+        "h": 32
       },
-      "wall_whiteboard": {
-        "x": 160,
-        "y": 0,
-        "w": 32,
-        "h": 48
-      },
-      "wall_server": {
+      "floor_conference": {
         "x": 192,
         "y": 0,
-        "w": 32,
-        "h": 48
+        "w": 64,
+        "h": 32
       },
-      "wall_bookshelf": {
-        "x": 224,
+      "foundation_edge_sw": {
+        "x": 256,
         "y": 0,
-        "w": 32,
-        "h": 48
-      },
-      "desk": {
-        "x": 0,
-        "y": 64,
         "w": 64,
         "h": 48
       },
-      "chair": {
-        "x": 64,
-        "y": 64,
-        "w": 32,
+      "foundation_edge_se": {
+        "x": 320,
+        "y": 0,
+        "w": 64,
+        "h": 48
+      },
+      "grid_cell_hover": {
+        "x": 384,
+        "y": 0,
+        "w": 64,
         "h": 32
       },
-      "plant": {
-        "x": 96,
+      "selection_halo": {
+        "x": 448,
+        "y": 0,
+        "w": 64,
+        "h": 32
+      },
+      "wall_top": {
+        "x": 192,
         "y": 64,
+        "w": 64,
+        "h": 96
+      },
+      "wall_window": {
+        "x": 0,
+        "y": 64,
+        "w": 64,
+        "h": 96
+      },
+      "wall_whiteboard": {
+        "x": 64,
+        "y": 64,
+        "w": 64,
+        "h": 96
+      },
+      "wall_server": {
+        "x": 128,
+        "y": 64,
+        "w": 64,
+        "h": 96
+      },
+      "wall_bookshelf": {
+        "x": 256,
+        "y": 64,
+        "w": 64,
+        "h": 96
+      },
+      "wall_dashboard": {
+        "x": 320,
+        "y": 64,
+        "w": 64,
+        "h": 96
+      },
+      "wall_art": {
+        "x": 384,
+        "y": 64,
+        "w": 64,
+        "h": 96
+      },
+      "desk": {
+        "x": 0,
+        "y": 160,
+        "w": 64,
+        "h": 64
+      },
+      "chair": {
+        "x": 64,
+        "y": 160,
+        "w": 32,
+        "h": 48
+      },
+      "chair_front": {
+        "x": 96,
+        "y": 160,
         "w": 32,
         "h": 48
       },
       "water_cooler": {
         "x": 128,
-        "y": 64,
+        "y": 160,
         "w": 32,
-        "h": 48
+        "h": 64
       },
       "espresso_bar": {
         "x": 160,
-        "y": 64,
-        "w": 32,
-        "h": 48
+        "y": 160,
+        "w": 64,
+        "h": 64
       },
       "coffee_bar": {
         "x": 160,
-        "y": 64,
-        "w": 32,
-        "h": 48
+        "y": 160,
+        "w": 64,
+        "h": 64
+      },
+      "plant": {
+        "x": 224,
+        "y": 160,
+        "w": 48,
+        "h": 64
+      },
+      "server_rack": {
+        "x": 288,
+        "y": 160,
+        "w": 48,
+        "h": 80
       },
       "conference_table": {
         "x": 0,
-        "y": 128,
-        "w": 64,
-        "h": 48
+        "y": 256,
+        "w": 96,
+        "h": 64
       },
       "conference_chair": {
-        "x": 64,
-        "y": 128,
+        "x": 96,
+        "y": 256,
         "w": 32,
-        "h": 32
+        "h": 48
       },
       "lounge_sofa": {
-        "x": 96,
-        "y": 128,
+        "x": 128,
+        "y": 256,
+        "w": 64,
+        "h": 64
+      },
+      "coffee_table": {
+        "x": 192,
+        "y": 256,
         "w": 48,
         "h": 32
       },
-      "coffee_table": {
-        "x": 144,
-        "y": 128,
-        "w": 32,
-        "h": 32
-      },
-      "office_dialog": {
-        "x": 192,
-        "y": 64,
-        "w": 32,
-        "h": 32
-      },
       "cursor_hand": {
-        "x": 224,
-        "y": 64,
-        "w": 16,
-        "h": 16
+        "x": 240,
+        "y": 256,
+        "w": 24,
+        "h": 24
       },
-      "cursor_pointer": {
-        "x": 224,
-        "y": 64,
-        "w": 16,
-        "h": 16
+      "drop_dust": {
+        "x": 264,
+        "y": 256,
+        "w": 32,
+        "h": 32
       }
     }
   },
@@ -145,14 +195,14 @@
     "frameWidth": 32,
     "frameHeight": 48,
     "variants": {
+      "default": "/assets/characters/character_pi.png",
       "pi": "/assets/characters/character_pi.png",
       "claude": "/assets/characters/character_claude.png",
       "codex": "/assets/characters/character_codex.png",
-      "gemini": "/assets/characters/character_gemini.png",
-      "default": "/assets/characters/character_pi.png"
+      "gemini": "/assets/characters/character_gemini.png"
     },
     "animations": {
-      "idle_down": {
+      "idle_se": {
         "row": 0,
         "frames": [
           0,
@@ -162,7 +212,7 @@
         ],
         "frameRate": 3
       },
-      "idle_up": {
+      "idle_ne": {
         "row": 1,
         "frames": [
           0,
@@ -172,17 +222,7 @@
         ],
         "frameRate": 3
       },
-      "sitting": {
-        "row": 1,
-        "frames": [
-          0,
-          1,
-          2,
-          3
-        ],
-        "frameRate": 3
-      },
-      "walk_down": {
+      "walk_se": {
         "row": 2,
         "frames": [
           0,
@@ -192,7 +232,7 @@
         ],
         "frameRate": 6
       },
-      "walk_up": {
+      "walk_ne": {
         "row": 3,
         "frames": [
           0,
@@ -202,7 +242,7 @@
         ],
         "frameRate": 6
       },
-      "walk_side": {
+      "walk_sw": {
         "row": 4,
         "frames": [
           0,
@@ -212,27 +252,7 @@
         ],
         "frameRate": 6
       },
-      "walk_left": {
-        "row": 4,
-        "frames": [
-          0,
-          1,
-          2,
-          3
-        ],
-        "frameRate": 6
-      },
-      "walk_right": {
-        "row": 4,
-        "frames": [
-          0,
-          1,
-          2,
-          3
-        ],
-        "frameRate": 6
-      },
-      "type_up": {
+      "type": {
         "row": 5,
         "frames": [
           0,
@@ -242,58 +262,8 @@
         ],
         "frameRate": 8
       },
-      "typing": {
-        "row": 5,
-        "frames": [
-          0,
-          1,
-          2,
-          3
-        ],
-        "frameRate": 8
-      },
-      "working": {
-        "row": 5,
-        "frames": [
-          0,
-          1,
-          2,
-          3
-        ],
-        "frameRate": 8
-      },
-      "thinking": {
+      "think": {
         "row": 6,
-        "frames": [
-          0,
-          1,
-          2,
-          3
-        ],
-        "frameRate": 4
-      },
-      "reading": {
-        "row": 6,
-        "frames": [
-          0,
-          1,
-          2,
-          3
-        ],
-        "frameRate": 4
-      },
-      "alert": {
-        "row": 6,
-        "frames": [
-          0,
-          1,
-          2,
-          3
-        ],
-        "frameRate": 4
-      },
-      "done": {
-        "row": 7,
         "frames": [
           0,
           1,
@@ -304,6 +274,16 @@
       },
       "celebrate": {
         "row": 7,
+        "frames": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "frameRate": 4
+      },
+      "dragged": {
+        "row": 8,
         "frames": [
           0,
           1,

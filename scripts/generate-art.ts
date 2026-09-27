@@ -5,175 +5,168 @@ import { PNG } from 'pngjs';
 type RGBA = [number, number, number, number];
 
 // ====================================================
-// AUTHENTIC 2D PIXEL ART MODERN TECH OFFICE COLOR PALETTE
-// (Retro cozy tech startup aesthetic: Stardew / Kairosoft / Habbo)
+// AUTHENTIC 2.5D SIMULATION GAME COLOR PALETTE
+// (High-detail 16/32-bit RPG & Sim: FF6 / Tactics / SimCity / Theme Hospital)
 // ====================================================
 const PALETTE = {
   transparent: [0, 0, 0, 0] as RGBA,
 
   // 1. Honey Oak Parquet Hardwood Floor
-  woodHighlight: [245, 208, 150, 255] as RGBA,
-  woodLight: [224, 178, 118, 255] as RGBA,
-  woodMid: [198, 142, 86, 255] as RGBA,
-  woodDark: [164, 108, 58, 255] as RGBA,
-  woodShadow: [126, 76, 38, 255] as RGBA,
-  woodSeam: [88, 52, 26, 255] as RGBA,
+  woodTopLight: [238, 196, 142, 255] as RGBA,
+  woodTopMid: [210, 160, 102, 255] as RGBA,
+  woodTopDark: [178, 126, 74, 255] as RGBA,
+  woodTopShadow: [142, 94, 52, 255] as RGBA,
+  woodSeam: [98, 62, 32, 255] as RGBA,
+  woodHighlight: [252, 222, 178, 255] as RGBA,
 
-  // 2. Modern Navy / Slate Gray Carpet Tiles
-  carpetHighlight: [82, 102, 130, 255] as RGBA,
-  carpetLight: [64, 82, 110, 255] as RGBA,
-  carpetMid: [46, 60, 84, 255] as RGBA,
-  carpetDark: [32, 44, 66, 255] as RGBA,
-  carpetShadow: [22, 30, 48, 255] as RGBA,
-  carpetSeam: [16, 22, 36, 255] as RGBA,
+  // 2. Modern Navy / Slate Carpet Tiles
+  carpetTopLight: [74, 94, 122, 255] as RGBA,
+  carpetTopMid: [54, 70, 96, 255] as RGBA,
+  carpetTopDark: [38, 50, 72, 255] as RGBA,
+  carpetSeam: [24, 32, 48, 255] as RGBA,
+  carpetHighlight: [92, 116, 148, 255] as RGBA,
 
-  // 3. Breakroom Ceramic / Checkerboard Tile Floor
-  tileIvoryLight: [252, 252, 254, 255] as RGBA,
-  tileIvoryMid: [236, 240, 246, 255] as RGBA,
-  tileIvoryShadow: [208, 216, 228, 255] as RGBA,
-  tileSlateLight: [172, 184, 202, 255] as RGBA,
-  tileSlateMid: [138, 150, 172, 255] as RGBA,
-  tileSlateShadow: [110, 122, 142, 255] as RGBA,
-  tileGrout: [82, 94, 112, 255] as RGBA,
+  // 3. Breakroom Checkerboard Ceramic Tile
+  tileWhiteLight: [250, 252, 255, 255] as RGBA,
+  tileWhiteMid: [232, 238, 246, 255] as RGBA,
+  tileWhiteDark: [204, 214, 226, 255] as RGBA,
+  tileSlateLight: [168, 182, 202, 255] as RGBA,
+  tileSlateMid: [132, 146, 168, 255] as RGBA,
+  tileSlateDark: [100, 114, 136, 255] as RGBA,
+  tileGrout: [72, 84, 102, 255] as RGBA,
 
-  // 4. Modern Office Drywall & Trim
-  wallDrywallTop: [244, 246, 250, 255] as RGBA,
-  wallDrywallMid: [220, 226, 234, 255] as RGBA,
-  wallDrywallDark: [196, 204, 214, 255] as RGBA,
-  wallTrimSilver: [168, 178, 192, 255] as RGBA,
-  baseboardWoodMid: [112, 70, 40, 255] as RGBA,
-  baseboardWoodDark: [76, 44, 22, 255] as RGBA,
-  baseboardMetalLight: [142, 152, 166, 255] as RGBA,
-  baseboardMetalDark: [68, 76, 90, 255] as RGBA,
-  floorShadow: [16, 20, 30, 140] as RGBA,
+  // 4. Executive Conference Walnut Parquet
+  walnutLight: [164, 112, 72, 255] as RGBA,
+  walnutMid: [136, 88, 52, 255] as RGBA,
+  walnutDark: [106, 64, 34, 255] as RGBA,
+  walnutShadow: [76, 44, 22, 255] as RGBA,
+  walnutBorder: [214, 164, 114, 255] as RGBA,
 
-  // 5. Panoramic City Skyline Window
-  windowFrameOuter: [38, 44, 56, 255] as RGBA,
-  windowFrameInner: [60, 68, 84, 255] as RGBA,
-  windowFrameHighlight: [92, 104, 124, 255] as RGBA,
-  skyDayTop: [84, 164, 246, 255] as RGBA,
-  skyDayMid: [136, 194, 252, 255] as RGBA,
-  skyDayHorizon: [194, 226, 255, 255] as RGBA,
-  cloudWhite: [255, 255, 255, 255] as RGBA,
-  cloudShadow: [216, 230, 246, 230] as RGBA,
-  buildingFar: [142, 166, 198, 255] as RGBA,
-  buildingMid: [100, 122, 156, 255] as RGBA,
-  buildingNear: [68, 86, 118, 255] as RGBA,
-  buildingLitWindow: [254, 240, 138, 255] as RGBA,
-  buildingCyanWindow: [165, 243, 252, 255] as RGBA,
-  windowGlassGlare: [255, 255, 255, 75] as RGBA,
+  // 5. Foundation / Diorama 3D Cutaway Base
+  foundationTop: [60, 68, 82, 255] as RGBA,
+  foundationLeftLight: [44, 50, 62, 255] as RGBA,
+  foundationLeftDark: [30, 34, 44, 255] as RGBA,
+  foundationRightLight: [52, 60, 74, 255] as RGBA,
+  foundationRightDark: [38, 44, 56, 255] as RGBA,
+  foundationBevel: [84, 96, 116, 255] as RGBA,
+  foundationStrata: [22, 26, 34, 255] as RGBA,
 
-  // 6. Whiteboard & Agile Sticky Notes
-  whiteboardFrame: [178, 186, 198, 255] as RGBA,
+  // 6. Modern Office Drywall Walls & Molding
+  wallDrywallTop: [246, 248, 252, 255] as RGBA,
+  wallDrywallMid: [224, 230, 240, 255] as RGBA,
+  wallDrywallDark: [198, 206, 218, 255] as RGBA,
+  wallDrywallShadow: [168, 178, 192, 255] as RGBA,
+  wallTrimSilver: [156, 168, 184, 255] as RGBA,
+  baseboardWoodMid: [116, 74, 42, 255] as RGBA,
+  baseboardWoodDark: [82, 48, 24, 255] as RGBA,
+
+  // 7. Panoramic Skyline Windows (Sunlight, Skyscraper, Clouds)
+  skyTop: [76, 156, 242, 255] as RGBA,
+  skyMid: [128, 190, 252, 255] as RGBA,
+  skyHorizon: [196, 228, 255, 255] as RGBA,
+  buildingFar: [148, 172, 204, 255] as RGBA,
+  buildingMid: [106, 128, 162, 255] as RGBA,
+  buildingNear: [72, 90, 122, 255] as RGBA,
+  windowLitGold: [254, 240, 138, 255] as RGBA,
+  windowLitCyan: [165, 243, 252, 255] as RGBA,
+  windowFrame: [42, 48, 62, 255] as RGBA,
+  windowFrameHighlight: [78, 88, 110, 255] as RGBA,
+  glassGlare: [255, 255, 255, 70] as RGBA,
+
+  // 8. Agile Sprint Whiteboard
+  whiteboardFrame: [180, 188, 202, 255] as RGBA,
   whiteboardSurface: [250, 252, 255, 255] as RGBA,
   whiteboardShadow: [222, 228, 238, 255] as RGBA,
   stickyYellow: [254, 240, 138, 255] as RGBA,
-  stickyYellowDark: [234, 179, 8, 255] as RGBA,
   stickyCyan: [165, 243, 252, 255] as RGBA,
-  stickyCyanDark: [6, 182, 212, 255] as RGBA,
   stickyPink: [251, 207, 232, 255] as RGBA,
-  stickyPinkDark: [236, 72, 153, 255] as RGBA,
   stickyGreen: [187, 247, 208, 255] as RGBA,
-  diagramBox: [37, 99, 235, 255] as RGBA,
-  diagramLine: [225, 29, 72, 255] as RGBA,
-  diagramGreen: [22, 163, 74, 255] as RGBA,
-  markerTray: [148, 158, 172, 255] as RGBA,
+  kanbanLine: [120, 132, 150, 255] as RGBA,
 
-  // 7. Server Rack
-  serverCabinet: [18, 20, 26, 255] as RGBA,
-  serverBladeDark: [28, 32, 40, 255] as RGBA,
-  serverBladeTrim: [78, 88, 106, 255] as RGBA,
+  // 9. Server Cabinets & Blinking Lights
+  serverBlack: [20, 22, 28, 255] as RGBA,
+  serverBlade: [32, 36, 46, 255] as RGBA,
+  serverTrim: [68, 78, 96, 255] as RGBA,
   ledGreen: [34, 197, 94, 255] as RGBA,
   ledCyan: [34, 211, 238, 255] as RGBA,
   ledAmber: [245, 158, 11, 255] as RGBA,
   ledBlue: [59, 130, 246, 255] as RGBA,
   cableBlue: [37, 99, 235, 255] as RGBA,
   cableYellow: [234, 179, 8, 255] as RGBA,
-  cableMagenta: [217, 70, 239, 255] as RGBA,
 
-  // 8. Modern Workstation Desk & Dual Monitors
-  deskOakLight: [216, 166, 116, 255] as RGBA,
-  deskOakMid: [184, 132, 86, 255] as RGBA,
-  deskOakDark: [146, 98, 58, 255] as RGBA,
-  deskBevel: [236, 190, 142, 255] as RGBA,
-  deskLegSteel: [46, 52, 64, 255] as RGBA,
-  deskLegHighlight: [78, 86, 102, 255] as RGBA,
-  monitorBezel: [20, 22, 28, 255] as RGBA,
-  monitorStand: [118, 126, 140, 255] as RGBA,
-  screenCodeBg: [14, 18, 26, 255] as RGBA,
-  syntaxKeyword: [192, 132, 252, 255] as RGBA, // purple
-  syntaxFunction: [56, 189, 248, 255] as RGBA, // cyan
-  syntaxString: [250, 204, 21, 255] as RGBA,  // yellow
-  syntaxComment: [74, 222, 128, 255] as RGBA, // green
-  syntaxCursor: [244, 244, 245, 255] as RGBA, // white cursor
-  pcTowerCase: [24, 26, 34, 255] as RGBA,
-  pcRgbLight: [168, 85, 247, 255] as RGBA,
-  keyboardDark: [30, 32, 42, 255] as RGBA,
-  keyboardKey: [224, 228, 238, 255] as RGBA,
-  mouseBlack: [36, 40, 50, 255] as RGBA,
-  mugCeramic: [248, 248, 252, 255] as RGBA,
-  coffeeLiquid: [96, 52, 24, 255] as RGBA,
+  // 10. Modern Desk & High-Tech Workstation
+  deskSurfaceTop: [226, 180, 128, 255] as RGBA,
+  deskSurfaceHighlight: [246, 208, 164, 255] as RGBA,
+  deskSurfaceSide: [178, 134, 88, 255] as RGBA,
+  deskSurfaceShadow: [136, 96, 58, 255] as RGBA,
+  deskLegSteel: [46, 52, 66, 255] as RGBA,
+  deskLegHighlight: [78, 88, 108, 255] as RGBA,
+  monitorFrame: [24, 26, 32, 255] as RGBA,
+  monitorBezel: [44, 48, 58, 255] as RGBA,
+  monitorScreenBg: [14, 18, 26, 255] as RGBA,
+  syntaxCyan: [56, 189, 248, 255] as RGBA,
+  syntaxGreen: [74, 222, 128, 255] as RGBA,
+  syntaxPurple: [192, 132, 252, 255] as RGBA,
+  syntaxYellow: [250, 204, 21, 255] as RGBA,
+  syntaxOrange: [251, 146, 60, 255] as RGBA,
+  keyboardDark: [28, 32, 40, 255] as RGBA,
+  keyboardLight: [62, 72, 90, 255] as RGBA,
+  rgbGlow: [56, 189, 248, 160] as RGBA,
 
-  // 9. Ergonomic Mesh Swivel Chair
-  chairMesh: [26, 30, 38, 255] as RGBA,
-  chairMeshLight: [46, 54, 68, 255] as RGBA,
-  chairFrame: [62, 70, 84, 255] as RGBA,
-  chairChrome: [176, 186, 202, 255] as RGBA,
-  chairCaster: [18, 20, 26, 255] as RGBA,
+  // 11. Ergonomic Mesh Chair
+  chairMeshLight: [52, 60, 74, 255] as RGBA,
+  chairMeshMid: [36, 42, 54, 255] as RGBA,
+  chairMeshDark: [24, 28, 36, 255] as RGBA,
+  chairChrome: [186, 196, 212, 255] as RGBA,
+  chairChromeShadow: [116, 126, 142, 255] as RGBA,
 
-  // 10. Potted Plant (Monstera / Ficus)
-  potClayLight: [218, 128, 88, 255] as RGBA,
-  potClayMid: [186, 96, 60, 255] as RGBA,
-  potClayDark: [144, 70, 40, 255] as RGBA,
-  leafHighlight: [136, 240, 112, 255] as RGBA,
-  leafMid: [72, 186, 70, 255] as RGBA,
-  leafDark: [34, 126, 42, 255] as RGBA,
-  leafShadow: [16, 74, 28, 255] as RGBA,
-
-  // 11. Water Cooler
-  waterBottleAqua: [56, 189, 248, 180] as RGBA,
-  waterBottleLight: [186, 230, 253, 230] as RGBA,
-  coolerSteelLight: [238, 242, 248, 255] as RGBA,
-  coolerSteelShadow: [178, 188, 202, 255] as RGBA,
-  tapRed: [239, 68, 68, 255] as RGBA,
-  tapBlue: [59, 130, 246, 255] as RGBA,
-
-  // 12. Coffee Machine / Breakroom Counter
-  counterSurface: [176, 132, 88, 255] as RGBA,
-  counterCabinet: [62, 42, 26, 255] as RGBA,
-  espressoChrome: [222, 230, 240, 255] as RGBA,
-  espressoDark: [66, 74, 86, 255] as RGBA,
-  steamWhite: [255, 255, 255, 140] as RGBA,
-
-  // 13. Conference Table & Meeting Setup
-  confWoodTop: [180, 124, 76, 255] as RGBA,
-  confWoodBevel: [220, 164, 110, 255] as RGBA,
-  confLeg: [48, 54, 66, 255] as RGBA,
-  micPuck: [30, 32, 38, 255] as RGBA,
+  // 12. Conference Room Props
+  confWoodTop: [176, 120, 78, 255] as RGBA,
+  confWoodSide: [132, 84, 50, 255] as RGBA,
+  confWoodShadow: [98, 58, 32, 255] as RGBA,
+  micPuck: [34, 38, 48, 255] as RGBA,
   micPuckGreen: [34, 197, 94, 255] as RGBA,
-  laptopSilver: [204, 210, 222, 255] as RGBA,
-  glassWater: [186, 230, 253, 200] as RGBA,
+  laptopSilver: [210, 218, 230, 255] as RGBA,
 
-  // Bookshelf / Tech Decor
-  bookSpineRed: [225, 29, 72, 255] as RGBA,
-  bookSpineBlue: [37, 99, 235, 255] as RGBA,
-  bookSpineGreen: [22, 163, 74, 255] as RGBA,
-  bookSpineYellow: [234, 179, 8, 255] as RGBA,
-  trophyGold: [251, 191, 36, 255] as RGBA,
+  // 13. Breakroom Espresso Bar & Water Cooler
+  counterQuartzTop: [244, 246, 250, 255] as RGBA,
+  counterQuartzSide: [204, 212, 224, 255] as RGBA,
+  counterWoodSide: [156, 110, 72, 255] as RGBA,
+  espressoChrome: [228, 234, 244, 255] as RGBA,
+  espressoShadow: [124, 134, 150, 255] as RGBA,
+  steamWhite: [255, 255, 255, 180] as RGBA,
+  coolerSteel: [194, 204, 218, 255] as RGBA,
+  waterAqua: [96, 198, 246, 220] as RGBA,
+  waterAquaDeep: [38, 148, 214, 240] as RGBA,
+  waterTapRed: [239, 68, 68, 255] as RGBA,
+  waterTapBlue: [59, 130, 246, 255] as RGBA,
 
-  // UI & General
+  // 14. Potted Plants
+  leafHighlight: [110, 231, 128, 255] as RGBA,
+  leafMid: [34, 197, 94, 255] as RGBA,
+  leafDark: [22, 128, 61, 255] as RGBA,
+  leafShadow: [16, 84, 40, 255] as RGBA,
+  potCeramicTop: [248, 250, 252, 255] as RGBA,
+  potCeramicSide: [212, 220, 232, 255] as RGBA,
+  potSoil: [74, 48, 30, 255] as RGBA,
+
+  // 15. Lounge Sofa
+  sofaTealTop: [36, 116, 132, 255] as RGBA,
+  sofaTealSide: [22, 82, 96, 255] as RGBA,
+  sofaTealShadow: [14, 56, 66, 255] as RGBA,
+  pillowYellow: [250, 204, 21, 255] as RGBA,
+
+  // Shadows, Highlights & UI
+  floorShadow: [12, 16, 26, 130] as RGBA,
   white: [255, 255, 255, 255] as RGBA,
   black: [0, 0, 0, 255] as RGBA,
-  uiDarkBg: [15, 23, 42, 255] as RGBA,
+  uiDarkSlate: [15, 23, 42, 240] as RGBA,
   uiBorderSlate: [71, 85, 105, 255] as RGBA,
-  statusGreen: [34, 197, 94, 255] as RGBA,
-  statusAmber: [245, 158, 11, 255] as RGBA,
-  statusRed: [239, 68, 68, 255] as RGBA,
-  statusBlue: [59, 130, 246, 255] as RGBA,
+  goldStar: [251, 191, 36, 255] as RGBA,
 };
 
 // ====================================================
-// DRAWING UTILITIES
+// CORE DRAWING PRIMITIVES
 // ====================================================
 function createPNG(w: number, h: number): PNG {
   const png = new PNG({ width: w, height: h });
@@ -232,6 +225,95 @@ function fillGradientV(png: PNG, rx: number, ry: number, rw: number, rh: number,
   }
 }
 
+/**
+ * Draws a classic 2:1 isometric diamond at (ox, oy) with width w and height h = w / 2.
+ */
+function fillIsoDiamond(
+  png: PNG,
+  ox: number,
+  oy: number,
+  w: number,
+  h: number,
+  fillColor: RGBA,
+  strokeColor?: RGBA
+) {
+  const halfW = w / 2;
+  const halfH = h / 2;
+  const cx = ox + halfW;
+  const cy = oy + halfH;
+
+  for (let y = 0; y < h; y++) {
+    // Distance from vertical center
+    const dy = Math.abs(y - halfH);
+    // Span width at this y line in 2:1 ratio
+    const spanHalfW = Math.round((halfH - dy) * 2);
+    if (spanHalfW <= 0) continue;
+
+    const x1 = cx - spanHalfW;
+    const x2 = cx + spanHalfW - 1;
+    for (let x = x1; x <= x2; x++) {
+      setPixel(png, x, oy + y, fillColor);
+    }
+
+    if (strokeColor) {
+      setPixel(png, x1, oy + y, strokeColor);
+      setPixel(png, x2, oy + y, strokeColor);
+    }
+  }
+
+  if (strokeColor) {
+    setPixel(png, cx, oy, strokeColor);
+    setPixel(png, cx, oy + h - 1, strokeColor);
+  }
+}
+
+/**
+ * Draws a 3D isometric prism with shaded top, left, and right faces.
+ */
+function drawIsoPrism(
+  png: PNG,
+  cx: number,
+  cy: number,
+  w: number,
+  d: number,
+  h: number,
+  topCol: RGBA,
+  leftCol: RGBA,
+  rightCol: RGBA,
+  highlightCol?: RGBA
+) {
+  // Top face diamond
+  fillIsoDiamond(png, cx - w / 2, cy - h - d / 4, w, d / 2, topCol);
+
+  // Left face (facing SW)
+  const halfW = w / 2;
+  const topY = cy - h;
+  const botY = cy;
+  for (let y = 0; y < h; y++) {
+    const curY = topY + y;
+    for (let x = -halfW; x <= 0; x++) {
+      const edgeY = curY + (x + halfW) * 0.5;
+      setPixel(png, cx + x, Math.round(edgeY), leftCol);
+    }
+  }
+
+  // Right face (facing SE)
+  for (let y = 0; y < h; y++) {
+    const curY = topY + y;
+    for (let x = 0; x <= halfW; x++) {
+      const edgeY = curY + (halfW - x) * 0.5;
+      setPixel(png, cx + x, Math.round(edgeY), rightCol);
+    }
+  }
+
+  // Highlights
+  if (highlightCol) {
+    for (let y = 0; y < h; y++) {
+      setPixel(png, cx, topY + y + d / 4, highlightCol);
+    }
+  }
+}
+
 function savePNG(png: PNG, filePath: string) {
   fs.mkdirSync(path.dirname(filePath), { recursive: true });
   fs.writeFileSync(filePath, PNG.sync.write(png));
@@ -239,705 +321,712 @@ function savePNG(png: PNG, filePath: string) {
 }
 
 // ====================================================
-// 1. GENERATE HIGH-QUALITY 2D PIXEL ART OFFICE TILESET (256x256)
+// 1. GENERATE MODERN 2.5D ISOMETRIC OFFICE TILESET (512x512)
 // ====================================================
 export function generateModernOfficeTileset(): PNG {
-  const png = createPNG(256, 256);
+  const png = createPNG(512, 512);
 
   // --------------------------------------------------
-  // TILE: Honey Oak Parquet Hardwood Floor (32x32) at [0, 0]
-  // Visible plank lines and warm honey grain
+  // TILE 1: Honey Oak Parquet Floor (64x32) at [0, 0]
+  // Authentic 2:1 isometric diamond with herringbone wooden planks
   // --------------------------------------------------
-  fillRect(png, 0, 0, 32, 32, PALETTE.woodMid);
-  for (let p = 0; p < 4; p++) {
-    const py = p * 8;
-    const isAlt = p % 2 === 1;
+  fillIsoDiamond(png, 0, 0, 64, 32, PALETTE.woodTopMid);
 
-    // Horizontal plank seam & top highlight
-    fillRect(png, 0, py, 32, 1, PALETTE.woodHighlight);
-    fillRect(png, 0, py + 7, 32, 1, PALETTE.woodSeam);
+  // Wood herringbone plank details & seam lines inside the diamond
+  for (let py = 4; py < 28; py += 6) {
+    for (let px = 8; px < 56; px++) {
+      const dy = Math.abs(py - 16);
+      if (Math.abs(px - 32) < (16 - dy) * 2 - 2) {
+        if ((px + py) % 11 === 0) setPixel(png, px, py, PALETTE.woodTopDark);
+        if ((px * 2 + py) % 17 === 0) setPixel(png, px, py, PALETTE.woodHighlight);
+        if ((px - py) % 12 === 0) setPixel(png, px, py, PALETTE.woodTopLight);
+      }
+    }
+  }
+  // Isometric plank seams
+  for (let i = -16; i <= 16; i += 8) {
+    for (let x = 4; x < 60; x++) {
+      const y = Math.round(16 + (x - 32) * 0.5 + i);
+      if (y >= 1 && y < 31) {
+        const dy = Math.abs(y - 16);
+        if (Math.abs(x - 32) < (16 - dy) * 2 - 1) {
+          setPixel(png, x, y, PALETTE.woodSeam);
+        }
+      }
+    }
+  }
+  // Outer crisp highlight & seam
+  fillIsoDiamond(png, 0, 0, 64, 32, PALETTE.transparent, PALETTE.woodSeam);
+  setPixel(png, 32, 0, PALETTE.woodHighlight);
+  setPixel(png, 33, 0, PALETTE.woodHighlight);
 
-    // Staggered vertical seams
-    const vx1 = isAlt ? 10 : 16;
-    const vx2 = isAlt ? 26 : 31;
-    fillRect(png, vx1, py, 1, 7, PALETTE.woodSeam);
-    fillRect(png, vx2, py, 1, 7, PALETTE.woodSeam);
+  // --------------------------------------------------
+  // TILE 2: Navy / Slate Gray Carpet Diamond (64x32) at [64, 0]
+  // Modern tech pod carpet tile with subtle micro-weave
+  // --------------------------------------------------
+  fillIsoDiamond(png, 64, 0, 64, 32, PALETTE.carpetTopMid);
+  for (let y = 1; y < 31; y++) {
+    const dy = Math.abs(y - 16);
+    const span = (16 - dy) * 2;
+    for (let x = 96 - span + 1; x < 96 + span - 1; x++) {
+      if ((x + y) % 3 === 0) setPixel(png, x, y, PALETTE.carpetTopLight);
+      if ((x * 2 + y * 3) % 7 === 0) setPixel(png, x, y, PALETTE.carpetTopDark);
+    }
+  }
+  // Carpet module grid border
+  fillIsoDiamond(png, 64, 0, 64, 32, PALETTE.transparent, PALETTE.carpetSeam);
+  setPixel(png, 96, 0, PALETTE.carpetHighlight);
 
-    // Warm organic wood grain
-    for (let x = 0; x < 32; x++) {
-      if ((x + p * 7) % 5 === 0) setPixel(png, x, py + 2, PALETTE.woodLight);
-      if ((x * 3 + p * 4) % 8 === 0) setPixel(png, x, py + 4, PALETTE.woodDark);
-      if ((x * 2 + p * 3) % 9 === 0) setPixel(png, x, py + 5, PALETTE.woodLight);
-      if ((x + p * 11) % 13 === 0) setPixel(png, x, py + 3, PALETTE.woodShadow);
+  // --------------------------------------------------
+  // TILE 3: Breakroom Checkerboard Ceramic Tile (64x32) at [128, 0]
+  // High-gloss porcelain & slate checker squares in isometric projection
+  // --------------------------------------------------
+  fillIsoDiamond(png, 128, 0, 64, 32, PALETTE.tileWhiteMid);
+  // Quadrant checker pattern in isometric diamond
+  for (let y = 1; y < 31; y++) {
+    const dy = Math.abs(y - 16);
+    const span = (16 - dy) * 2;
+    for (let x = 160 - span + 1; x < 160 + span - 1; x++) {
+      const u = (x - 160) * 0.5 + (y - 16);
+      const v = (y - 16) - (x - 160) * 0.5;
+      const checker = (Math.floor((u + 32) / 8) + Math.floor((v + 32) / 8)) % 2 === 0;
+      if (checker) {
+        setPixel(png, x, y, PALETTE.tileSlateMid);
+        if ((x + y) % 5 === 0) setPixel(png, x, y, PALETTE.tileSlateLight);
+      } else {
+        if ((x + y) % 4 === 0) setPixel(png, x, y, PALETTE.tileWhiteLight);
+      }
+    }
+  }
+  // Grout lines
+  fillIsoDiamond(png, 128, 0, 64, 32, PALETTE.transparent, PALETTE.tileGrout);
+
+  // --------------------------------------------------
+  // TILE 4: Executive Conference Walnut Parquet (64x32) at [192, 0]
+  // Deep warm walnut wood with perimeter brass/boxwood inlay
+  // --------------------------------------------------
+  fillIsoDiamond(png, 192, 0, 64, 32, PALETTE.walnutMid);
+  for (let y = 2; y < 30; y++) {
+    const dy = Math.abs(y - 16);
+    const span = (16 - dy) * 2;
+    for (let x = 224 - span + 2; x < 224 + span - 2; x++) {
+      if ((x + y * 2) % 6 === 0) setPixel(png, x, y, PALETTE.walnutDark);
+      if ((x * 3 + y) % 9 === 0) setPixel(png, x, y, PALETTE.walnutLight);
+    }
+  }
+  // Inlay border diamond (nested inside)
+  fillIsoDiamond(png, 198, 3, 52, 26, PALETTE.transparent, PALETTE.walnutBorder);
+  fillIsoDiamond(png, 192, 0, 64, 32, PALETTE.transparent, PALETTE.walnutShadow);
+
+  // --------------------------------------------------
+  // TILE 5: Foundation 3D Cutaway Rim - South-West Edge (64x48) at [256, 0]
+  // Simulation game 3D dioramas have thick cutaway foundation blocks!
+  // --------------------------------------------------
+  // Floor top diamond half
+  for (let y = 0; y < 16; y++) {
+    const span = y * 2;
+    for (let x = 288 - span; x <= 288; x++) {
+      setPixel(png, x, y, PALETTE.foundationTop);
+    }
+  }
+  // Left vertical cutaway slab (facing viewer-left)
+  for (let y = 0; y < 24; y++) {
+    for (let x = 256; x <= 288; x++) {
+      const topY = Math.round(16 + (x - 256) * 0.5 + y);
+      const isStrata = (topY % 7 === 0);
+      setPixel(png, x, topY, isStrata ? PALETTE.foundationStrata : PALETTE.foundationLeftLight);
+    }
+  }
+  // Bevel edge highlight
+  for (let x = 256; x <= 288; x++) {
+    const topY = Math.round(16 + (x - 256) * 0.5);
+    setPixel(png, x, topY, PALETTE.foundationBevel);
+  }
+
+  // --------------------------------------------------
+  // TILE 6: Foundation 3D Cutaway Rim - South-East Edge (64x48) at [320, 0]
+  // --------------------------------------------------
+  for (let y = 0; y < 24; y++) {
+    for (let x = 320; x <= 352; x++) {
+      const topY = Math.round(16 + (352 - x) * 0.5 + y);
+      const isStrata = (topY % 7 === 0);
+      setPixel(png, x, topY, isStrata ? PALETTE.foundationStrata : PALETTE.foundationRightLight);
+    }
+  }
+  for (let x = 320; x <= 352; x++) {
+    const topY = Math.round(16 + (352 - x) * 0.5);
+    setPixel(png, x, topY, PALETTE.foundationBevel);
+  }
+
+  // --------------------------------------------------
+  // TILE 7: Grid Cell Hover Highlight (64x32) at [384, 0]
+  // --------------------------------------------------
+  fillIsoDiamond(png, 384, 0, 64, 32, [56, 189, 248, 45], [56, 189, 248, 180]);
+
+  // --------------------------------------------------
+  // TILE 8: Selection Ring / Aura (64x32) at [448, 0]
+  // Glowing golden isometric halo
+  // --------------------------------------------------
+  fillIsoDiamond(png, 448, 0, 64, 32, [251, 191, 36, 40], [251, 191, 36, 220]);
+
+  // ====================================================
+  // ROW 1: 2.5D ISOMETRIC BACK WALLS (64x80 each, y = 64 to 144)
+  // Back Wall NW runs from top-left (0, 0) down-right at +0.5 slope
+  // ====================================================
+
+  // Helper for drawing 2.5D Isometric Wall Segment
+  function drawIsoWallBase(startX: number, startY: number, baseColor: RGBA) {
+    // Wall height = 64px, sloping at 0.5 ratio down-right
+    for (let x = 0; x < 64; x++) {
+      const baseY = startY + 56 + Math.round(x * 0.5);
+      const topY = baseY - 64;
+      for (let y = topY; y <= baseY; y++) {
+        setPixel(png, startX + x, y, baseColor);
+      }
+      // Top wall cap molding
+      setPixel(png, startX + x, topY, PALETTE.wallTrimSilver);
+      setPixel(png, startX + x, topY + 1, PALETTE.wallDrywallTop);
+      // Baseboard trim at bottom
+      setPixel(png, startX + x, baseY - 2, PALETTE.baseboardWoodMid);
+      setPixel(png, startX + x, baseY - 1, PALETTE.baseboardWoodDark);
+      setPixel(png, startX + x, baseY, PALETTE.floorShadow);
     }
   }
 
   // --------------------------------------------------
-  // TILE: Modern Navy / Slate Gray Carpet Tiles (32x32) at [32, 0]
-  // Subtle modular seam pattern and micro-woven texture
+  // WALL 1: North-West Window with Panoramic City Skyline (64x96) at [0, 64]
   // --------------------------------------------------
-  fillRect(png, 32, 0, 32, 32, PALETTE.carpetMid);
-  // Modular 16x16 carpet tiles divider seams
-  fillRect(png, 32, 15, 32, 1, PALETTE.carpetSeam);
-  fillRect(png, 32, 16, 32, 1, PALETTE.carpetHighlight);
-  fillRect(png, 47, 0, 1, 32, PALETTE.carpetSeam);
-  fillRect(png, 48, 0, 1, 32, PALETTE.carpetHighlight);
+  drawIsoWallBase(0, 64, PALETTE.wallDrywallMid);
+  // Large angled architectural window aperture (x=8 to 56, height 42)
+  for (let x = 8; x <= 56; x++) {
+    const baseY = 64 + 48 + Math.round(x * 0.5);
+    const winTopY = baseY - 46;
+    const winBotY = baseY - 8;
 
-  // Micro-woven loop texture with subtle directional grain
-  for (let y = 0; y < 32; y++) {
-    for (let x = 32; x < 64; x++) {
-      const isTopRightOrBottomLeft = ((x < 48 && y >= 16) || (x >= 48 && y < 16));
-      const grain = isTopRightOrBottomLeft ? (x + y * 2) % 4 : (x * 2 + y) % 4;
+    // Window frame border
+    setPixel(png, x, winTopY - 1, PALETTE.windowFrame);
+    setPixel(png, x, winBotY + 1, PALETTE.windowFrame);
 
-      if (grain === 0) setPixel(png, x, y, PALETTE.carpetHighlight);
-      else if (grain === 2) setPixel(png, x, y, PALETTE.carpetDark);
-      if ((x - 32) % 4 === 0 && y % 4 === 0) setPixel(png, x, y, PALETTE.carpetShadow);
+    // Sky gradient inside window
+    for (let y = winTopY; y <= winBotY; y++) {
+      const t = (y - winTopY) / (winBotY - winTopY);
+      const skyCol: RGBA = [
+        Math.round(PALETTE.skyTop[0] * (1 - t) + PALETTE.skyHorizon[0] * t),
+        Math.round(PALETTE.skyTop[1] * (1 - t) + PALETTE.skyHorizon[1] * t),
+        Math.round(PALETTE.skyTop[2] * (1 - t) + PALETTE.skyHorizon[2] * t),
+        255,
+      ];
+      setPixel(png, x, y, skyCol);
+    }
+  }
+
+  // Skyscrapers & City Skyline
+  fillRect(png, 12, 86, 10, 26, PALETTE.buildingFar);
+  fillRect(png, 26, 78, 14, 38, PALETTE.buildingNear);
+  fillRect(png, 42, 92, 12, 28, PALETTE.buildingMid);
+  // Lit office windows on skyscrapers
+  for (let by = 82; by < 112; by += 4) {
+    for (let bx = 28; bx < 38; bx += 3) {
+      if ((bx + by) % 5 !== 0) setPixel(png, bx, by, PALETTE.windowLitGold);
+    }
+  }
+  for (let by = 96; by < 116; by += 4) {
+    for (let bx = 44; bx < 52; bx += 3) {
+      setPixel(png, bx, by, PALETTE.windowLitCyan);
+    }
+  }
+  // Modern Window Mullion Dividers & Diagonal Glass Glare
+  for (let x = 8; x <= 56; x++) {
+    const baseY = 64 + 48 + Math.round(x * 0.5);
+    const winTopY = baseY - 46;
+    const winBotY = baseY - 8;
+    if (x === 32) {
+      for (let y = winTopY; y <= winBotY; y++) setPixel(png, x, y, PALETTE.windowFrameHighlight);
+    }
+    // Diagonal glass sheen glare
+    const glareY = winTopY + Math.round((x - 8) * 0.7);
+    if (glareY >= winTopY && glareY <= winBotY) {
+      setPixel(png, x, glareY, PALETTE.glassGlare);
+      setPixel(png, x, glareY + 1, PALETTE.glassGlare);
     }
   }
 
   // --------------------------------------------------
-  // TILE: Breakroom / Ceramic Checkerboard Tiles (32x32) at [64, 0]
-  // Clean alternating ivory porcelain and slate ceramic tiles
+  // WALL 2: North-West Agile Sprint Whiteboard (64x96) at [64, 64]
   // --------------------------------------------------
-  for (let ty = 0; ty < 2; ty++) {
-    for (let tx = 0; tx < 2; tx++) {
-      const bx = 64 + tx * 16;
-      const by = ty * 16;
-      const isAlt = (tx + ty) % 2 === 0;
+  drawIsoWallBase(64, 64, PALETTE.wallDrywallMid);
+  // Whiteboard mounting frame
+  for (let x = 70; x <= 122; x++) {
+    const baseY = 64 + 48 + Math.round((x - 64) * 0.5);
+    const topY = baseY - 44;
+    const botY = baseY - 10;
+    // Frame
+    setPixel(png, x, topY - 1, PALETTE.whiteboardFrame);
+    setPixel(png, x, botY + 1, PALETTE.whiteboardFrame);
+    // Board surface
+    for (let y = topY; y <= botY; y++) {
+      setPixel(png, x, y, PALETTE.whiteboardSurface);
+    }
+  }
+  // Kanban columns: To Do | In Progress | Done
+  for (let x = 70; x <= 122; x++) {
+    const baseY = 64 + 48 + Math.round((x - 64) * 0.5);
+    const topY = baseY - 44;
+    const botY = baseY - 10;
+    if (x === 87 || x === 105) {
+      for (let y = topY + 2; y <= botY - 2; y++) setPixel(png, x, y, PALETTE.kanbanLine);
+    }
+  }
+  // Colorful Agile Sticky Notes & System Architecture diagram
+  fillRect(png, 73, 86, 5, 5, PALETTE.stickyYellow);
+  fillRect(png, 79, 90, 5, 5, PALETTE.stickyCyan);
+  fillRect(png, 91, 92, 5, 5, PALETTE.stickyPink);
+  fillRect(png, 97, 96, 5, 5, PALETTE.stickyYellow);
+  fillRect(png, 109, 100, 5, 5, PALETTE.stickyGreen);
+  fillRect(png, 115, 104, 5, 5, PALETTE.stickyGreen);
 
-      // Base tile color
-      fillRect(png, bx, by, 16, 16, isAlt ? PALETTE.tileIvoryMid : PALETTE.tileSlateMid);
+  // --------------------------------------------------
+  // WALL 3: North-West Enterprise Server Wall (64x96) at [128, 64]
+  // --------------------------------------------------
+  drawIsoWallBase(128, 64, PALETTE.wallDrywallDark);
+  // Inset high-density server rack units mounted into wall
+  for (let x = 136; x <= 184; x++) {
+    const baseY = 64 + 50 + Math.round((x - 128) * 0.5);
+    const topY = baseY - 50;
+    const botY = baseY - 8;
+    for (let y = topY; y <= botY; y++) {
+      setPixel(png, x, y, PALETTE.serverBlack);
+    }
+    setPixel(png, x, topY, PALETTE.serverTrim);
+    setPixel(png, x, botY, PALETTE.serverTrim);
+  }
+  // Server rack blades, ventilation slits & status LEDs
+  for (let by = 80; by < 122; by += 4) {
+    fillRect(png, 140, by, 40, 3, PALETTE.serverBlade);
+    // Activity LEDs
+    setPixel(png, 142, by + 1, PALETTE.ledGreen);
+    setPixel(png, 145, by + 1, PALETTE.ledCyan);
+    setPixel(png, 148, by + 1, PALETTE.ledAmber);
+    setPixel(png, 151, by + 1, PALETTE.ledBlue);
+    // Ethernet patch cables
+    setPixel(png, 168, by + 1, PALETTE.cableBlue);
+    setPixel(png, 172, by + 1, PALETTE.cableYellow);
+  }
 
-      // Top and left glossy bevel highlight
-      fillRect(png, bx + 1, by + 1, 14, 1, isAlt ? PALETTE.tileIvoryLight : PALETTE.tileSlateLight);
-      fillRect(png, bx + 1, by + 1, 1, 14, isAlt ? PALETTE.tileIvoryLight : PALETTE.tileSlateLight);
-
-      // Specular shine glint at top-left
-      setPixel(png, bx + 2, by + 2, PALETTE.white);
-      setPixel(png, bx + 3, by + 2, PALETTE.white);
-
-      // Bottom and right bevel shadow
-      fillRect(png, bx, by + 15, 16, 1, isAlt ? PALETTE.tileIvoryShadow : PALETTE.tileSlateShadow);
-      fillRect(png, bx + 15, by, 1, 16, isAlt ? PALETTE.tileIvoryShadow : PALETTE.tileSlateShadow);
-
-      // Grout line on outer rim
-      fillRect(png, bx, by + 15, 16, 1, PALETTE.tileGrout);
-      fillRect(png, bx + 15, by, 1, 16, PALETTE.tileGrout);
+  // --------------------------------------------------
+  // WALL 4: North-West Modern Acoustic Wood Slat Wall (64x96) at [192, 64]
+  // --------------------------------------------------
+  drawIsoWallBase(192, 64, PALETTE.wallDrywallMid);
+  // Vertical modern acoustic oak slats
+  for (let x = 196; x < 252; x += 3) {
+    const baseY = 64 + 52 + Math.round((x - 192) * 0.5);
+    const topY = baseY - 48;
+    for (let y = topY; y < baseY - 4; y++) {
+      setPixel(png, x, y, PALETTE.woodTopLight);
+      setPixel(png, x + 1, y, PALETTE.woodTopMid);
     }
   }
 
   // --------------------------------------------------
-  // TILE: Modern Office Drywall & Baseboard Molding (32x48) at [96, 0]
-  // Warm off-white / light slate drywall with neat wood/metal baseboard
+  // WALL 5: North-East Modern Tech Bookshelf Wall (64x96) at [256, 64]
+  // (Sloping down-left for North-East wall)
   // --------------------------------------------------
-  // Upper ceiling shadow / drop
-  fillRect(png, 96, 0, 32, 2, PALETTE.wallDrywallDark);
-  fillRect(png, 96, 2, 32, 1, PALETTE.wallTrimSilver);
-
-  // Smooth modern painted drywall face
-  fillGradientV(png, 96, 3, 32, 35, PALETTE.wallDrywallTop, PALETTE.wallDrywallMid);
-
-  // Picture hanging rail / aluminum wall trim at y=38
-  fillRect(png, 96, 38, 32, 2, PALETTE.wallTrimSilver);
-
-  // Baseboard molding (y=40 to 48): warm mahogany wood with beveled metal cap
-  fillRect(png, 96, 40, 32, 2, PALETTE.baseboardMetalLight);
-  fillRect(png, 96, 42, 32, 5, PALETTE.baseboardWoodMid);
-  fillRect(png, 96, 47, 32, 1, PALETTE.baseboardWoodDark);
-
-  // --------------------------------------------------
-  // TILE: Large Office Window with City Skyline (32x48) at [128, 0]
-  // Panoramic window: blue sky, fluffy white clouds, skyscraper silhouettes, glass glare
-  // --------------------------------------------------
-  // Window outer wall frame
-  fillRect(png, 128, 0, 32, 6, PALETTE.wallDrywallMid);
-  fillRect(png, 128, 42, 32, 6, PALETTE.baseboardWoodMid);
-  fillRect(png, 128, 6, 2, 36, PALETTE.windowFrameOuter);
-  fillRect(png, 158, 6, 2, 36, PALETTE.windowFrameOuter);
-
-  // Glass pane sky gradient (28x36 at x=130, y=6)
-  fillGradientV(png, 130, 6, 28, 18, PALETTE.skyDayTop, PALETTE.skyDayMid);
-  fillGradientV(png, 130, 24, 28, 18, PALETTE.skyDayMid, PALETTE.skyDayHorizon);
-
-  // Fluffy white pixel clouds (upper sky: y=8 to 14)
-  // Cloud 1 (left)
-  fillRect(png, 133, 9, 8, 3, PALETTE.cloudWhite);
-  fillRect(png, 135, 7, 5, 2, PALETTE.cloudWhite);
-  fillRect(png, 134, 12, 7, 1, PALETTE.cloudShadow);
-  // Cloud 2 (right)
-  fillRect(png, 147, 11, 9, 3, PALETTE.cloudWhite);
-  fillRect(png, 149, 9, 6, 2, PALETTE.cloudWhite);
-  fillRect(png, 148, 14, 8, 1, PALETTE.cloudShadow);
-
-  // Skyscraper Silhouettes (Horizon: y=18 to 41)
-  // Far layer (lightest slate blue)
-  fillRect(png, 131, 24, 6, 18, PALETTE.buildingFar);
-  fillRect(png, 144, 22, 5, 20, PALETTE.buildingFar);
-
-  // Mid layer (medium slate)
-  fillRect(png, 135, 20, 8, 22, PALETTE.buildingMid);
-  fillRect(png, 138, 17, 2, 3, PALETTE.buildingMid); // spire
-  fillRect(png, 151, 23, 7, 19, PALETTE.buildingMid);
-
-  // Near layer (dark slate silhouettes with lit windows)
-  fillRect(png, 141, 25, 9, 17, PALETTE.buildingNear);
-  for (let wy = 27; wy < 40; wy += 3) {
-    setPixel(png, 143, wy, PALETTE.buildingLitWindow);
-    setPixel(png, 146, wy, PALETTE.buildingCyanWindow);
-    setPixel(png, 148, wy, PALETTE.buildingLitWindow);
+  for (let x = 0; x < 64; x++) {
+    const baseY = 64 + 88 - Math.round(x * 0.5);
+    const topY = baseY - 64;
+    for (let y = topY; y <= baseY; y++) {
+      setPixel(png, 256 + x, y, PALETTE.wallDrywallMid);
+    }
+    setPixel(png, 256 + x, topY, PALETTE.wallTrimSilver);
+    setPixel(png, 256 + x, baseY - 2, PALETTE.baseboardWoodMid);
+    setPixel(png, 256 + x, baseY - 1, PALETTE.baseboardWoodDark);
+    setPixel(png, 256 + x, baseY, PALETTE.floorShadow);
   }
+  // Bookshelf shelves & colorful technical books
+  fillRect(png, 266, 92, 44, 3, PALETTE.woodTopMid);
+  fillRect(png, 266, 106, 44, 3, PALETTE.woodTopMid);
+  fillRect(png, 266, 120, 44, 3, PALETTE.woodTopMid);
+  // Books on shelves
+  fillRect(png, 270, 83, 3, 9, [225, 29, 72, 255]); // Red book
+  fillRect(png, 274, 84, 4, 8, [37, 99, 235, 255]); // Blue book
+  fillRect(png, 279, 82, 3, 10, [22, 163, 74, 255]); // Green book
+  fillRect(png, 290, 85, 8, 7, PALETTE.goldStar); // Golden Tech Trophy!
+  fillRect(png, 272, 97, 4, 9, [234, 179, 8, 255]); // Yellow book
+  fillRect(png, 277, 98, 5, 8, [147, 51, 234, 255]); // Purple book
+  fillRect(png, 283, 96, 3, 10, [236, 72, 153, 255]); // Pink book
 
-  fillRect(png, 132, 28, 5, 14, PALETTE.buildingNear);
-  for (let wy = 30; wy < 40; wy += 3) {
-    setPixel(png, 134, wy, PALETTE.buildingLitWindow);
+  // --------------------------------------------------
+  // WALL 6: North-East Modern Telemetry Dashboard Wall (64x96) at [320, 64]
+  // Large wall-mounted curved monitor displaying Herdr system metrics
+  // --------------------------------------------------
+  for (let x = 0; x < 64; x++) {
+    const baseY = 64 + 88 - Math.round(x * 0.5);
+    const topY = baseY - 64;
+    for (let y = topY; y <= baseY; y++) {
+      setPixel(png, 320 + x, y, PALETTE.wallDrywallMid);
+    }
+    setPixel(png, 320 + x, topY, PALETTE.wallTrimSilver);
+    setPixel(png, 320 + x, baseY - 2, PALETTE.baseboardWoodMid);
+    setPixel(png, 320 + x, baseY, PALETTE.floorShadow);
   }
+  // Curved Wall Dashboard (36x24 at x=334, y=86)
+  fillRect(png, 332, 84, 40, 26, PALETTE.monitorFrame);
+  fillRect(png, 334, 86, 36, 22, PALETTE.monitorScreenBg);
+  // Telemetry graphs & metrics
+  fillRect(png, 337, 89, 14, 2, PALETTE.syntaxCyan);
+  fillRect(png, 337, 93, 8, 6, [34, 197, 94, 200]); // mini bar chart
+  fillRect(png, 347, 93, 8, 6, [59, 130, 246, 200]);
+  fillRect(png, 357, 90, 10, 14, PALETTE.serverBlade);
+  setPixel(png, 360, 93, PALETTE.ledGreen);
+  setPixel(png, 363, 93, PALETTE.ledGreen);
 
-  // Window mullions (center cross divider)
-  fillRect(png, 143, 6, 2, 36, PALETTE.windowFrameInner);
-  fillRect(png, 130, 24, 28, 2, PALETTE.windowFrameInner);
-  fillRect(png, 143, 6, 1, 36, PALETTE.windowFrameHighlight);
-  fillRect(png, 130, 24, 28, 1, PALETTE.windowFrameHighlight);
-
-  // Diagonal glass glare sheen
-  for (let g = 0; g < 18; g++) {
-    setPixel(png, 132 + g, 8 + g, PALETTE.windowGlassGlare);
-    setPixel(png, 133 + g, 8 + g, PALETTE.windowGlassGlare);
+  // --------------------------------------------------
+  // WALL 7: North-East Plain Wall with Modern Art (64x96) at [384, 64]
+  // --------------------------------------------------
+  for (let x = 0; x < 64; x++) {
+    const baseY = 64 + 88 - Math.round(x * 0.5);
+    const topY = baseY - 64;
+    for (let y = topY; y <= baseY; y++) {
+      setPixel(png, 384 + x, y, PALETTE.wallDrywallMid);
+    }
+    setPixel(png, 384 + x, topY, PALETTE.wallTrimSilver);
+    setPixel(png, 384 + x, baseY - 2, PALETTE.baseboardWoodMid);
+    setPixel(png, 384 + x, baseY, PALETTE.floorShadow);
   }
+  // Framed Canvas Modern Art
+  fillRect(png, 398, 86, 36, 24, PALETTE.wallTrimSilver);
+  fillRect(png, 400, 88, 32, 20, [30, 41, 59, 255]);
+  // Elegant geometric gradient inside painting
+  fillIsoDiamond(png, 406, 92, 20, 12, PALETTE.syntaxPurple, PALETTE.syntaxCyan);
 
-  // Windowsill at bottom
-  fillRect(png, 128, 41, 32, 2, PALETTE.wallTrimSilver);
-
-  // --------------------------------------------------
-  // TILE: Office Whiteboard (32x48) at [160, 0]
-  // Glassboard/whiteboard with sprint sticky notes, architecture diagrams, charts
-  // --------------------------------------------------
-  fillRect(png, 160, 0, 32, 48, PALETTE.wallDrywallMid);
-
-  // Whiteboard aluminum frame (28x32 at x=162, y=8)
-  fillRect(png, 162, 8, 28, 32, PALETTE.whiteboardFrame);
-  fillRect(png, 164, 10, 24, 28, PALETTE.whiteboardSurface);
-
-  // Specular sheen on whiteboard
-  fillRect(png, 164, 10, 24, 1, PALETTE.white);
-  fillRect(png, 164, 10, 1, 28, PALETTE.white);
-
-  // Architecture System Diagram:
-  // Microservice Box 1 (Blue)
-  fillRect(png, 166, 13, 7, 5, PALETTE.diagramBox);
-  fillRect(png, 167, 14, 5, 3, PALETTE.white);
-  // Microservice Box 2 (Green)
-  fillRect(png, 178, 13, 7, 5, PALETTE.diagramGreen);
-  fillRect(png, 179, 14, 5, 3, PALETTE.white);
-  // Connecting Arrow Line
-  fillRect(png, 173, 15, 5, 1, PALETTE.diagramLine);
-  setPixel(png, 177, 14, PALETTE.diagramLine);
-  setPixel(png, 177, 16, PALETTE.diagramLine);
-
-  // Sprint Sticky Notes:
-  // Sticky 1: Yellow Post-it
-  fillRect(png, 166, 21, 4, 4, PALETTE.stickyYellow);
-  fillRect(png, 166, 21, 4, 1, PALETTE.stickyYellowDark);
-  // Sticky 2: Cyan Post-it
-  fillRect(png, 172, 21, 4, 4, PALETTE.stickyCyan);
-  fillRect(png, 172, 21, 4, 1, PALETTE.stickyCyanDark);
-  // Sticky 3: Pink Post-it
-  fillRect(png, 178, 21, 4, 4, PALETTE.stickyPink);
-  fillRect(png, 178, 21, 4, 1, PALETTE.stickyPinkDark);
-  // Sticky 4: Mint Green
-  fillRect(png, 184, 21, 3, 4, PALETTE.stickyGreen);
-
-  // Burndown / Velocity Chart (bottom left: y=28 to 35)
-  fillRect(png, 166, 28, 1, 7, PALETTE.uiBorderSlate); // Y-axis
-  fillRect(png, 166, 35, 9, 1, PALETTE.uiBorderSlate); // X-axis
-  // Mini chart bars
-  fillRect(png, 168, 32, 2, 3, PALETTE.syntaxFunction);
-  fillRect(png, 171, 30, 2, 5, PALETTE.syntaxKeyword);
-  fillRect(png, 174, 28, 2, 7, PALETTE.statusGreen);
-
-  // Marker Tray at bottom of board (holds black, blue, red markers + eraser)
-  fillRect(png, 162, 39, 28, 2, PALETTE.markerTray);
-  setPixel(png, 167, 39, PALETTE.black); // black marker
-  setPixel(png, 172, 39, PALETTE.cableBlue); // blue marker
-  setPixel(png, 177, 39, PALETTE.tapRed); // red marker
-  fillRect(png, 182, 38, 4, 2, PALETTE.uiBorderSlate); // eraser
-
-  // Baseboard at bottom
-  fillRect(png, 160, 43, 32, 5, PALETTE.baseboardWoodMid);
+  // ====================================================
+  // ROW 2: 2.5D ISOMETRIC FURNITURE & WORKSTATIONS (y = 160 to 255)
+  // ====================================================
 
   // --------------------------------------------------
-  // TILE: Modern Server Rack (32x48) at [192, 0]
-  // Modern matte black chassis, blinking green/blue/amber LEDs, cables
+  // PROP 1: 2.5D Angled Workstation Desk with Dual Monitors (64x64) at [0, 160]
+  // Angled along isometric grid, dual curved monitors, mechanical keyboard, PC tower
   // --------------------------------------------------
-  fillRect(png, 192, 0, 32, 48, PALETTE.wallDrywallMid);
+  // Floor drop shadow under desk
+  fillIsoDiamond(png, 4, 186, 56, 28, PALETTE.floorShadow);
 
-  // Server Cabinet Chassis (24x42 at x=196, y=4)
-  fillRect(png, 196, 4, 24, 42, PALETTE.serverCabinet);
-  fillRect(png, 196, 4, 24, 1, PALETTE.serverBladeTrim);
-  fillRect(png, 196, 4, 1, 42, PALETTE.serverBladeTrim);
-  fillRect(png, 219, 4, 1, 42, PALETTE.serverBladeTrim);
+  // Steel Desk Legs (4 legs supporting the desk frame)
+  fillRect(png, 10, 184, 3, 20, PALETTE.deskLegSteel);
+  fillRect(png, 30, 194, 3, 20, PALETTE.deskLegSteel);
+  fillRect(png, 34, 174, 3, 18, PALETTE.deskLegSteel);
+  fillRect(png, 54, 184, 3, 20, PALETTE.deskLegSteel);
 
-  // 1U/2U Server Blades & LEDs (8 blade chassis units)
-  for (let b = 0; b < 8; b++) {
-    const by = 7 + b * 4;
-    fillRect(png, 198, by, 20, 3, PALETTE.serverBladeDark);
-    fillRect(png, 198, by + 2, 20, 1, PALETTE.serverCabinet);
+  // PC Tower on Floor under right side of desk (tempered glass + RGB glow)
+  fillRect(png, 44, 182, 10, 18, PALETTE.serverBlack);
+  fillRect(png, 45, 184, 8, 14, [24, 30, 42, 255]);
+  fillRect(png, 47, 186, 4, 2, PALETTE.syntaxCyan); // internal RGB RAM stick
+  fillRect(png, 47, 190, 4, 2, PALETTE.syntaxPurple); // RGB GPU
 
-    // Blinking LED status lights
-    setPixel(png, 200, by + 1, b % 2 === 0 ? PALETTE.ledGreen : PALETTE.ledCyan);
-    setPixel(png, 202, by + 1, b % 3 === 0 ? PALETTE.ledAmber : PALETTE.ledGreen);
-    setPixel(png, 204, by + 1, PALETTE.ledGreen);
-    setPixel(png, 206, by + 1, b % 4 === 0 ? PALETTE.ledBlue : PALETTE.ledCyan);
-
-    // Drive bays / vent slots
-    fillRect(png, 209, by + 1, 7, 1, PALETTE.serverBladeTrim);
-  }
-
-  // Vertical cable management duct & colorful patch cables (x=214, y=7 to 38)
-  fillRect(png, 216, 7, 2, 32, PALETTE.serverCabinet);
-  // Interwoven patch cables
-  fillRect(png, 216, 10, 1, 6, PALETTE.cableBlue);
-  fillRect(png, 217, 14, 1, 8, PALETTE.cableYellow);
-  fillRect(png, 216, 20, 1, 7, PALETTE.cableMagenta);
-  fillRect(png, 217, 26, 1, 8, PALETTE.cableBlue);
-
-  // Baseboard at bottom
-  fillRect(png, 192, 44, 32, 4, PALETTE.baseboardWoodMid);
-
-  // --------------------------------------------------
-  // TILE: Modern Tech Bookshelf & Awards (32x48) at [224, 0]
-  // Open Scandinavian shelf with programming books, succulent, and trophy
-  // --------------------------------------------------
-  fillRect(png, 224, 0, 32, 48, PALETTE.wallDrywallMid);
-
-  // Shelf frame (24x42 at x=228, y=4)
-  fillRect(png, 228, 4, 24, 42, PALETTE.deskOakDark);
-  fillRect(png, 228, 4, 24, 2, PALETTE.deskOakLight);
-
-  // Shelves at y=15, y=27, y=39
-  fillRect(png, 229, 15, 22, 2, PALETTE.deskOakLight);
-  fillRect(png, 229, 27, 22, 2, PALETTE.deskOakLight);
-  fillRect(png, 229, 39, 22, 2, PALETTE.deskOakLight);
-
-  // Top Shelf: Colorful Tech Books (O'Reilly style)
-  fillRect(png, 231, 7, 3, 8, PALETTE.bookSpineRed);
-  fillRect(png, 235, 6, 3, 9, PALETTE.bookSpineBlue);
-  fillRect(png, 239, 8, 3, 7, PALETTE.bookSpineGreen);
-  fillRect(png, 243, 7, 4, 8, PALETTE.bookSpineYellow);
-
-  // Middle Shelf: Mini potted succulent + Gold Hackathon Trophy
-  // Succulent in white ceramic cube
-  fillRect(png, 231, 22, 5, 5, PALETTE.white);
-  fillRect(png, 232, 19, 3, 3, PALETTE.leafMid);
-  // Gold Trophy
-  fillRect(png, 242, 24, 6, 3, PALETTE.trophyGold);
-  fillRect(png, 244, 21, 2, 3, PALETTE.trophyGold);
-  fillRect(png, 243, 18, 4, 3, PALETTE.trophyGold);
-
-  // Bottom Shelf: Magazine stack + Rubik's Cube
-  fillRect(png, 231, 33, 9, 6, PALETTE.syntaxKeyword);
-  fillRect(png, 242, 33, 5, 5, PALETTE.bookSpineRed);
-  setPixel(png, 243, 34, PALETTE.syntaxFunction);
-  setPixel(png, 245, 34, PALETTE.syntaxString);
-  setPixel(png, 244, 36, PALETTE.syntaxComment);
-
-  // Baseboard
-  fillRect(png, 224, 44, 32, 4, PALETTE.baseboardWoodMid);
-
-  // --------------------------------------------------
-  // OBJECT: Modern Developer Workstation Desk (64x48) at [0, 64]
-  // Dual widescreen monitors with syntax code, desktop tower, mechanical keyboard, mouse, coffee mug
-  // --------------------------------------------------
-  // Drop shadow on floor
-  fillRect(png, 4, 102, 56, 8, PALETTE.floorShadow);
-
-  // Sleek black powder-coated steel legs (y=88 to 106)
-  fillRect(png, 6, 88, 4, 20, PALETTE.deskLegSteel);
-  fillRect(png, 6, 88, 1, 20, PALETTE.deskLegHighlight);
-  fillRect(png, 54, 88, 4, 20, PALETTE.deskLegSteel);
-  fillRect(png, 54, 88, 1, 20, PALETTE.deskLegHighlight);
-  // Cable raceway / cross brace
-  fillRect(png, 10, 98, 44, 2, PALETTE.deskLegSteel);
-
-  // Desktop front edge (y=86 to 91)
-  fillRect(png, 2, 86, 60, 5, PALETTE.deskOakDark);
-  fillRect(png, 2, 90, 60, 1, PALETTE.woodSeam);
-
-  // Desk top surface (60x16 at x=2, y=70 to 86)
-  fillGradientV(png, 2, 70, 60, 16, PALETTE.deskOakLight, PALETTE.deskOakMid);
-  fillRect(png, 2, 70, 60, 1, PALETTE.deskBevel);
-
-  // Large Extended Desk Mat (42x12 at x=11, y=74)
-  fillRect(png, 11, 74, 42, 12, PALETTE.serverCabinet);
-  fillRect(png, 11, 74, 42, 1, PALETTE.syntaxFunction); // Cyan RGB edge glow
-  fillRect(png, 11, 85, 42, 1, PALETTE.syntaxKeyword);
-
-  // DUAL WIDESCREEN MONITORS ON ARTICULATED MOUNT
-  // Monitor stand base & arm
-  fillRect(png, 29, 68, 6, 6, PALETTE.monitorStand);
-  fillRect(png, 20, 66, 24, 2, PALETTE.monitorStand);
-
-  // LEFT MONITOR: Code Editor / IDE (23x17 at x=6, y=50)
-  fillRect(png, 6, 50, 23, 17, PALETTE.monitorBezel);
-  fillRect(png, 7, 51, 21, 15, PALETTE.screenCodeBg);
-  // Code syntax highlighting:
-  // Line 1: import { Agent } from 'herdr'
-  fillRect(png, 9, 53, 5, 1, PALETTE.syntaxKeyword);
-  fillRect(png, 15, 53, 6, 1, PALETTE.syntaxFunction);
-  fillRect(png, 22, 53, 4, 1, PALETTE.syntaxString);
-  // Line 2: const office = new Office()
-  fillRect(png, 9, 56, 4, 1, PALETTE.syntaxKeyword);
-  fillRect(png, 14, 56, 5, 1, PALETTE.syntaxFunction);
-  fillRect(png, 20, 56, 6, 1, PALETTE.syntaxString);
-  // Line 3: await office.spawn()
-  fillRect(png, 11, 59, 4, 1, PALETTE.syntaxKeyword);
-  fillRect(png, 16, 59, 7, 1, PALETTE.syntaxFunction);
-  // Line 4: // tests passing!
-  fillRect(png, 11, 62, 10, 1, PALETTE.syntaxComment);
-  // Line 5: return true | cursor
-  fillRect(png, 11, 64, 5, 1, PALETTE.syntaxKeyword);
-  setPixel(png, 17, 64, PALETTE.syntaxCursor);
-
-  // RIGHT MONITOR: Terminal & Real-Time Dashboard (23x17 at x=31, y=50)
-  fillRect(png, 31, 50, 23, 17, PALETTE.monitorBezel);
-  fillRect(png, 32, 51, 21, 15, PALETTE.screenCodeBg);
-  // Terminal prompt: $ git commit -m "feat"
-  fillRect(png, 34, 53, 3, 1, PALETTE.statusGreen); // $ prompt
-  fillRect(png, 38, 53, 12, 1, PALETTE.syntaxCursor);
-  // Status checkmarks
-  setPixel(png, 34, 56, PALETTE.statusGreen);
-  fillRect(png, 36, 56, 9, 1, PALETTE.syntaxComment);
-  // Mini live performance bar chart (y=59 to 64)
-  fillRect(png, 34, 62, 2, 3, PALETTE.syntaxFunction);
-  fillRect(png, 37, 60, 2, 5, PALETTE.syntaxFunction);
-  fillRect(png, 40, 58, 2, 7, PALETTE.statusGreen);
-  fillRect(png, 43, 61, 2, 4, PALETTE.syntaxKeyword);
-  fillRect(png, 46, 59, 2, 6, PALETTE.syntaxFunction);
-  fillRect(png, 49, 62, 2, 3, PALETTE.syntaxString);
-
-  // Mechanical Keyboard (16x6 at x=19, y=77)
-  fillRect(png, 19, 77, 16, 6, PALETTE.keyboardDark);
-  fillRect(png, 19, 77, 16, 1, PALETTE.syntaxFunction); // underglow
-  for (let ky = 78; ky < 82; ky += 2) {
-    for (let kx = 20; kx < 34; kx += 2) {
-      setPixel(png, kx, ky, PALETTE.keyboardKey);
+  // Chamfered Oak Desk Top Slab (isometric diamond 56x28 at y=172)
+  fillIsoDiamond(png, 4, 168, 56, 28, PALETTE.deskSurfaceTop);
+  // Bevel front-left & front-right edges
+  for (let y = 0; y < 4; y++) {
+    for (let x = 4; x <= 32; x++) {
+      const edgeY = 168 + 14 + Math.round((x - 4) * 0.5) + y;
+      setPixel(png, x, edgeY, PALETTE.deskSurfaceSide);
+    }
+    for (let x = 32; x <= 60; x++) {
+      const edgeY = 168 + 28 - Math.round((x - 32) * 0.5) + y;
+      setPixel(png, x, edgeY, PALETTE.deskSurfaceShadow);
     }
   }
+  // Desk top surface highlight rim
+  fillIsoDiamond(png, 4, 168, 56, 28, PALETTE.transparent, PALETTE.deskSurfaceHighlight);
 
-  // Ergonomic Mouse (4x6 at x=39, y=77)
-  fillRect(png, 39, 77, 4, 6, PALETTE.mouseBlack);
-  setPixel(png, 40, 77, PALETTE.syntaxFunction); // cyan glowing wheel
+  // Monitor 1: Left Ultrawide Curved Screen (angled towards chair)
+  // Monitor stand
+  fillRect(png, 20, 172, 4, 4, PALETTE.monitorFrame);
+  // Screen body (angled)
+  fillRect(png, 12, 156, 18, 16, PALETTE.monitorFrame);
+  fillRect(png, 13, 157, 16, 14, PALETTE.monitorScreenBg);
+  // IDE code syntax on Left Screen
+  fillRect(png, 15, 159, 10, 1, PALETTE.syntaxPurple); // const / import
+  fillRect(png, 15, 161, 12, 1, PALETTE.syntaxCyan); // function / class
+  fillRect(png, 17, 163, 8, 1, PALETTE.syntaxYellow); // parameters
+  fillRect(png, 17, 165, 11, 1, PALETTE.syntaxGreen); // return code
 
-  // Desktop Tower PC Case (10x16 at x=53, y=70 to 86)
-  fillRect(png, 53, 70, 8, 16, PALETTE.pcTowerCase);
-  fillRect(png, 54, 71, 6, 14, PALETTE.serverCabinet);
-  // Interior RGB strip & cooling fan glow
-  fillRect(png, 55, 73, 4, 1, PALETTE.pcRgbLight);
-  fillRect(png, 56, 76, 2, 2, PALETTE.syntaxFunction);
-  fillRect(png, 55, 80, 4, 1, PALETTE.pcRgbLight);
+  // Monitor 2: Right Secondary Screen (Portrait / Documentation / Terminal)
+  fillRect(png, 32, 168, 4, 4, PALETTE.monitorFrame);
+  fillRect(png, 31, 153, 15, 18, PALETTE.monitorFrame);
+  fillRect(png, 32, 154, 13, 16, PALETTE.monitorScreenBg);
+  // Terminal logs / status on Right Screen
+  fillRect(png, 34, 156, 9, 1, PALETTE.syntaxGreen); // $ git commit
+  fillRect(png, 34, 158, 8, 1, PALETTE.syntaxCyan);
+  fillRect(png, 34, 160, 10, 1, PALETTE.syntaxOrange);
 
-  // Ceramic Coffee Mug with Rising Pixel Steam (x=46, y=74)
-  fillRect(png, 46, 75, 5, 6, PALETTE.mugCeramic);
-  fillRect(png, 47, 75, 3, 2, PALETTE.coffeeLiquid);
-  setPixel(png, 51, 77, PALETTE.mugCeramic); // handle
-  // Rising steam puffs
-  setPixel(png, 47, 73, PALETTE.steamWhite);
-  setPixel(png, 49, 72, PALETTE.steamWhite);
-
-  // Post-it on desk
-  fillRect(png, 4, 75, 5, 5, PALETTE.stickyYellow);
-  fillRect(png, 5, 76, 4, 4, PALETTE.stickyYellowDark);
-
-  // --------------------------------------------------
-  // OBJECT: Ergonomic Office Swivel Chair (32x32) at [64, 64]
-  // Modern mesh high-back office chair with castors and armrests
-  // --------------------------------------------------
-  // Floor drop shadow
-  fillRect(png, 70, 90, 20, 5, PALETTE.floorShadow);
-
-  // Chrome 5-star base & caster wheels (y=87 to 93)
-  fillRect(png, 78, 86, 4, 4, PALETTE.chairChrome); // pneumatic cylinder
-  fillRect(png, 72, 89, 16, 2, PALETTE.chairChrome); // star leg base
-  setPixel(png, 70, 91, PALETTE.chairCaster);
-  setPixel(png, 89, 91, PALETTE.chairCaster);
-  setPixel(png, 79, 92, PALETTE.chairCaster);
-
-  // Contoured waterfall mesh seat pan (20x8 at x=70, y=78)
-  fillGradientV(png, 70, 78, 20, 8, PALETTE.chairMeshLight, PALETTE.chairMesh);
-  fillRect(png, 70, 78, 20, 1, PALETTE.chairFrame);
-
-  // High-back breathable mesh lumbar backrest with headrest (18x13 at x=71, y=65)
-  fillGradientV(png, 71, 65, 18, 13, PALETTE.chairMesh, PALETTE.chairMeshLight);
-  fillRect(png, 71, 65, 18, 1, PALETTE.chairFrame);
-  fillRect(png, 71, 65, 1, 13, PALETTE.chairFrame);
-  fillRect(png, 88, 65, 1, 13, PALETTE.chairFrame);
-  // Headrest pill at top
-  fillRect(png, 74, 63, 12, 3, PALETTE.chairFrame);
-  fillRect(png, 75, 63, 10, 2, PALETTE.chairMeshLight);
-
-  // 3D Contoured armrests on left and right
-  fillRect(png, 67, 72, 3, 8, PALETTE.chairMeshLight);
-  fillRect(png, 67, 72, 3, 2, PALETTE.chairFrame);
-  fillRect(png, 90, 72, 3, 8, PALETTE.chairMeshLight);
-  fillRect(png, 90, 72, 3, 2, PALETTE.chairFrame);
+  // Backlit Mechanical Keyboard on Desk Mat
+  fillRect(png, 20, 179, 16, 8, [30, 36, 48, 255]); // desk mat
+  fillRect(png, 22, 180, 12, 5, PALETTE.keyboardDark);
+  for (let kx = 23; kx < 33; kx += 2) {
+    setPixel(png, kx, 181, PALETTE.keyboardLight);
+    setPixel(png, kx, 183, PALETTE.syntaxCyan); // cyan underglow!
+  }
+  // Ergonomic mouse & ceramic coffee mug
+  fillRect(png, 38, 181, 3, 4, PALETTE.keyboardDark);
+  fillRect(png, 44, 176, 4, 4, PALETTE.white); // white coffee mug
+  setPixel(png, 45, 177, PALETTE.baseboardWoodDark); // coffee inside
 
   // --------------------------------------------------
-  // OBJECT: Potted Lush Monstera / Ficus Plant (32x48) at [96, 64]
-  // Terracotta fluted pot with dark rich soil and lush overlapping leaves
+  // PROP 2: 2.5D Ergonomic Mesh Chair - South-East View (32x48) at [64, 160]
+  // (View from back-left, looking toward desk)
   // --------------------------------------------------
-  fillRect(png, 102, 106, 20, 5, PALETTE.floorShadow);
-
-  // Terracotta Pot (18x16 at x=103, y=94)
-  fillGradientV(png, 103, 94, 18, 16, PALETTE.potClayLight, PALETTE.potClayDark);
-  fillRect(png, 101, 93, 22, 3, PALETTE.potClayLight); // fluted rim
-  fillRect(png, 103, 95, 18, 2, PALETTE.woodShadow); // rich soil
-  fillRect(png, 105, 108, 14, 2, PALETTE.potClayDark); // saucer base
-
-  // Lush Overlapping Monstera Leaves (y=66 to 93)
-  // Large Center Leaf (14x16 at x=105, y=68)
-  fillGradientV(png, 105, 68, 14, 15, PALETTE.leafHighlight, PALETTE.leafDark);
-  // Characteristic Monstera fenestrations (cutouts)
-  setPixel(png, 108, 72, PALETTE.leafShadow);
-  setPixel(png, 115, 73, PALETTE.leafShadow);
-  setPixel(png, 109, 76, PALETTE.leafShadow);
-  setPixel(png, 114, 78, PALETTE.leafShadow);
-  setPixel(png, 110, 80, PALETTE.leafShadow);
-  // Center main vein
-  fillRect(png, 111, 69, 1, 14, PALETTE.leafHighlight);
-
-  // Left Fan Leaf (11x12 at x=98, y=74)
-  fillGradientV(png, 98, 74, 11, 12, PALETTE.leafMid, PALETTE.leafShadow);
-  fillRect(png, 101, 76, 1, 9, PALETTE.leafHighlight);
-  setPixel(png, 103, 77, PALETTE.leafShadow);
-  setPixel(png, 104, 80, PALETTE.leafShadow);
-
-  // Right Fan Leaf (12x13 at x=115, y=73)
-  fillGradientV(png, 115, 73, 12, 13, PALETTE.leafHighlight, PALETTE.leafDark);
-  fillRect(png, 119, 75, 1, 10, PALETTE.leafHighlight);
-  setPixel(png, 118, 77, PALETTE.leafShadow);
-  setPixel(png, 123, 78, PALETTE.leafShadow);
-
-  // Central Stems down to soil
-  fillRect(png, 111, 82, 2, 12, PALETTE.leafDark);
-  fillRect(png, 108, 85, 1, 9, PALETTE.leafDark);
-  fillRect(png, 114, 85, 1, 9, PALETTE.leafDark);
+  fillIsoDiamond(png, 68, 196, 24, 10, PALETTE.floorShadow);
+  // Chrome 5-star caster base
+  fillRect(png, 78, 194, 4, 6, PALETTE.chairChrome);
+  fillRect(png, 72, 198, 16, 2, PALETTE.chairChrome);
+  // Contoured Seat Cushion
+  fillIsoDiamond(png, 70, 182, 20, 10, PALETTE.chairMeshLight);
+  // Mesh High Backrest with Lumbar Support
+  fillRect(png, 72, 166, 16, 18, PALETTE.chairMeshMid);
+  fillRect(png, 74, 168, 12, 14, PALETTE.chairMeshLight);
+  fillRect(png, 72, 166, 16, 1, PALETTE.chairChrome); // top rim
+  // Lumbar support strap
+  fillRect(png, 72, 175, 16, 2, PALETTE.chairMeshDark);
 
   // --------------------------------------------------
-  // OBJECT: Stainless Steel Water Cooler (32x48) at [128, 64]
-  // Transparent inverted blue bottle with bubbles, drip tray, cold/hot taps
+  // PROP 3: 2.5D Ergonomic Mesh Chair - Front Facing View (32x48) at [96, 160]
   // --------------------------------------------------
-  fillRect(png, 134, 106, 20, 5, PALETTE.floorShadow);
-
-  // Lower Dispenser Cabinet (16x22 at x=136, y=88)
-  fillGradientV(png, 136, 88, 16, 22, PALETTE.coolerSteelLight, PALETTE.coolerSteelShadow);
-  fillRect(png, 136, 88, 1, 22, PALETTE.white); // specular highlight
-
-  // Dispenser Alcove (12x10 at x=138, y=90)
-  fillRect(png, 138, 90, 12, 10, PALETTE.serverCabinet);
-  // Red Hot Water Tap & Blue Cold Water Tap
-  fillRect(png, 140, 91, 2, 3, PALETTE.tapRed);
-  fillRect(png, 146, 91, 2, 3, PALETTE.tapBlue);
-  // Stainless Steel Drip Tray Grill
-  fillRect(png, 138, 98, 12, 2, PALETTE.coolerSteelShadow);
-  for (let gx = 139; gx < 149; gx += 2) setPixel(png, gx, 98, PALETTE.black);
-
-  // Inverted Blue Polycarbonate Water Jug (14x16 at x=137, y=70)
-  fillRect(png, 137, 70, 14, 16, PALETTE.waterBottleAqua);
-  fillRect(png, 139, 68, 10, 3, PALETTE.waterBottleAqua); // neck
-  // Bottle curvature highlight & rim
-  fillRect(png, 138, 71, 2, 14, PALETTE.waterBottleLight);
-  fillRect(png, 139, 70, 10, 1, PALETTE.waterBottleLight);
-  // Water bubbles inside bottle
-  setPixel(png, 143, 76, PALETTE.white);
-  setPixel(png, 144, 75, PALETTE.white);
-  setPixel(png, 141, 81, PALETTE.white);
+  fillIsoDiamond(png, 100, 196, 24, 10, PALETTE.floorShadow);
+  fillRect(png, 110, 194, 4, 6, PALETTE.chairChrome);
+  fillRect(png, 104, 198, 16, 2, PALETTE.chairChrome);
+  // Seat cushion front
+  fillIsoDiamond(png, 102, 184, 20, 10, PALETTE.chairMeshMid);
+  // Backrest behind seat
+  fillRect(png, 104, 166, 16, 18, PALETTE.chairMeshDark);
+  fillRect(png, 106, 168, 12, 14, PALETTE.chairMeshMid);
+  // Armrests
+  fillRect(png, 101, 178, 3, 6, PALETTE.chairChrome);
+  fillRect(png, 120, 178, 3, 6, PALETTE.chairChrome);
 
   // --------------------------------------------------
-  // OBJECT: Espresso Coffee Machine & Breakroom Counter (32x48) at [160, 64]
-  // Counter with espresso machine, steam, cups, pressure gauge
+  // PROP 4: 2.5D Stainless Steel Water Cooler (32x64) at [128, 160]
+  // Inverted aqua water bottle with bubbles, cold/hot taps, chrome drip tray
   // --------------------------------------------------
-  fillRect(png, 166, 106, 20, 5, PALETTE.floorShadow);
+  fillIsoDiamond(png, 132, 210, 24, 10, PALETTE.floorShadow);
+  // Dispenser Cabinet Prism
+  drawIsoPrism(png, 144, 208, 18, 18, 26, PALETTE.counterQuartzTop, PALETTE.coolerSteel, PALETTE.counterQuartzSide);
+  // Dispenser Alcove
+  fillRect(png, 138, 190, 12, 10, PALETTE.serverBlack);
+  setPixel(png, 140, 192, PALETTE.waterTapRed); // hot tap
+  setPixel(png, 146, 192, PALETTE.waterTapBlue); // cold tap
+  fillRect(png, 138, 198, 12, 2, PALETTE.chairChrome); // grill
 
-  // Wooden / laminate counter block (24x16 at x=164, y=94)
-  fillGradientV(png, 164, 94, 24, 16, PALETTE.counterSurface, PALETTE.counterCabinet);
-  fillRect(png, 164, 94, 24, 1, PALETTE.deskBevel);
-  // Cabinet door separation & chrome handles
-  fillRect(png, 175, 96, 1, 14, PALETTE.woodSeam);
-  fillRect(png, 173, 100, 1, 5, PALETTE.chairChrome);
-  fillRect(png, 177, 100, 1, 5, PALETTE.chairChrome);
+  // Inverted Blue 5-Gallon Water Bottle
+  fillRect(png, 137, 166, 14, 18, PALETTE.waterAqua);
+  fillRect(png, 139, 164, 10, 3, PALETTE.waterAquaDeep);
+  fillRect(png, 138, 167, 2, 16, PALETTE.white); // specular highlight
+  // Air bubbles in bottle
+  setPixel(png, 143, 172, PALETTE.white);
+  setPixel(png, 144, 171, PALETTE.white);
+  setPixel(png, 141, 178, PALETTE.white);
 
-  // Italian Espresso Machine Body (18x18 at x=167, y=76)
-  fillGradientV(png, 167, 76, 18, 18, PALETTE.espressoChrome, PALETTE.espressoDark);
-  fillRect(png, 167, 76, 18, 1, PALETTE.white);
+  // --------------------------------------------------
+  // PROP 5: 2.5D Breakroom Quartz Counter with Espresso Machine (64x64) at [160, 160]
+  // Modern coffee bar, espresso machine, steam wand, pressure dial, mugs
+  // --------------------------------------------------
+  fillIsoDiamond(png, 164, 210, 56, 22, PALETTE.floorShadow);
+  // Quartz / Oak Counter Prism
+  drawIsoPrism(png, 192, 206, 48, 22, 24, PALETTE.counterQuartzTop, PALETTE.counterWoodSide, PALETTE.counterQuartzSide);
 
-  // Grouphead & Portafilter handle
-  fillRect(png, 173, 85, 6, 2, PALETTE.black);
-  fillRect(png, 178, 86, 4, 1, PALETTE.black); // handle
-
+  // Italian Espresso Machine Body
+  fillRect(png, 182, 164, 20, 20, PALETTE.espressoChrome);
+  fillRect(png, 182, 164, 20, 2, PALETTE.white); // top chrome highlight
+  // Group head & portafilter handle
+  fillRect(png, 188, 174, 8, 3, PALETTE.black);
+  fillRect(png, 195, 176, 5, 2, PALETTE.baseboardWoodDark);
   // Round pressure gauge with red needle
-  fillRect(png, 170, 78, 3, 3, PALETTE.white);
-  setPixel(png, 171, 79, PALETTE.tapRed);
-
-  // Chrome steam wand & ceramic cup
-  fillRect(png, 181, 84, 1, 6, PALETTE.chairChrome);
-  fillRect(png, 174, 90, 4, 3, PALETTE.mugCeramic);
+  fillRect(png, 185, 168, 4, 4, PALETTE.white);
+  setPixel(png, 187, 170, PALETTE.waterTapRed);
+  // Ceramic coffee cups on warming rack & counter
+  fillRect(png, 184, 161, 4, 3, PALETTE.white);
+  fillRect(png, 190, 161, 4, 3, PALETTE.pillowYellow);
+  fillRect(png, 190, 182, 4, 3, PALETTE.white);
   // Rising steam puffs
-  setPixel(png, 174, 88, PALETTE.steamWhite);
-  setPixel(png, 176, 86, PALETTE.steamWhite);
-
-  // Stack of clean mugs on top warming tray
-  fillRect(png, 175, 73, 4, 3, PALETTE.mugCeramic);
-  fillRect(png, 180, 73, 4, 3, PALETTE.syntaxKeyword);
+  setPixel(png, 191, 179, PALETTE.steamWhite);
+  setPixel(png, 192, 177, PALETTE.steamWhite);
+  setPixel(png, 190, 175, PALETTE.steamWhite);
 
   // --------------------------------------------------
-  // OBJECT: Modern Tech Dialogue Card Bubble (32x32) at [192, 64]
-  // Clean dark slate card with subtle border and status indicator
+  // PROP 6: 2.5D Lush Potted Monstera Deliciosa (48x64) at [224, 160]
+  // Modern fluted white ceramic cylinder pot with large shaded leaves
   // --------------------------------------------------
-  fillRect(png, 194, 66, 28, 20, PALETTE.floorShadow);
-  fillRect(png, 193, 65, 28, 20, PALETTE.uiDarkBg);
-  fillRect(png, 193, 65, 28, 1, PALETTE.uiBorderSlate);
-  fillRect(png, 193, 84, 28, 1, PALETTE.uiBorderSlate);
-  fillRect(png, 193, 65, 1, 20, PALETTE.uiBorderSlate);
-  fillRect(png, 220, 65, 1, 20, PALETTE.uiBorderSlate);
+  fillIsoDiamond(png, 228, 212, 40, 16, PALETTE.floorShadow);
+  // Fluted white ceramic pot
+  drawIsoPrism(png, 248, 210, 24, 16, 16, PALETTE.potSoil, PALETTE.potCeramicSide, PALETTE.potCeramicTop);
 
-  // Bubble downward pointer
-  fillRect(png, 205, 85, 4, 2, PALETTE.uiDarkBg);
-  setPixel(png, 206, 87, PALETTE.uiBorderSlate);
+  // Lush multi-layered tropical leaves
+  const drawLeaf = (lx: number, ly: number, lw: number, lh: number) => {
+    fillIsoDiamond(png, lx, ly, lw, lh, PALETTE.leafMid);
+    fillIsoDiamond(png, lx + 2, ly + 2, lw - 4, lh - 4, PALETTE.leafHighlight);
+    fillRect(png, lx + Math.round(lw / 2), ly, 1, lh, PALETTE.leafDark); // center vein
+  };
+  drawLeaf(230, 166, 22, 14);
+  drawLeaf(244, 160, 24, 16);
+  drawLeaf(248, 172, 22, 14);
+  drawLeaf(226, 176, 20, 12);
+  drawLeaf(238, 180, 22, 14);
 
-  // Mini modern status badge inside bubble
-  fillRect(png, 196, 68, 4, 4, PALETTE.statusGreen);
-  fillRect(png, 203, 69, 14, 2, PALETTE.white);
-  fillRect(png, 196, 75, 21, 2, PALETTE.wallTrimSilver);
-  fillRect(png, 196, 79, 16, 2, PALETTE.wallTrimSilver);
+  // Stems down to soil
+  fillRect(png, 246, 186, 2, 12, PALETTE.leafDark);
+  fillRect(png, 242, 188, 1, 10, PALETTE.leafDark);
+  fillRect(png, 250, 188, 1, 10, PALETTE.leafDark);
 
   // --------------------------------------------------
-  // OBJECT: Modern Pixel Pointer Cursor (16x16) at [224, 64]
+  // PROP 7: 2.5D Standalone Enterprise Server Rack 42U (48x80) at [288, 160]
+  // Tall server tower, smoked glass door, blinky LEDs, ventilation
   // --------------------------------------------------
-  // Crisp dark outline + white fill sleek cursor
-  const cursorShape = [
-    [0, 0], [0, 1], [0, 2], [0, 3], [0, 4], [0, 5], [0, 6], [0, 7], [0, 8], [0, 9],
-    [1, 1], [1, 2], [1, 3], [1, 4], [1, 5], [1, 6], [1, 7], [1, 8],
-    [2, 2], [2, 3], [2, 4], [2, 5], [2, 6], [2, 7],
-    [3, 3], [3, 4], [3, 5], [3, 6],
-    [4, 4], [4, 5], [4, 6], [4, 7], [4, 8],
-    [5, 5], [5, 8], [5, 9],
-    [6, 6], [6, 9], [6, 10],
-  ];
-  for (const [cx, cy] of cursorShape) {
-    setPixel(png, 225 + cx, 65 + cy, PALETTE.white);
+  fillIsoDiamond(png, 292, 224, 40, 16, PALETTE.floorShadow);
+  drawIsoPrism(png, 312, 220, 32, 20, 48, PALETTE.serverTrim, PALETTE.serverBlack, PALETTE.serverBlade);
+  // Server rack front glass & blades
+  for (let sy = 176; sy < 216; sy += 5) {
+    fillRect(png, 314, sy, 12, 3, PALETTE.serverBlade);
+    setPixel(png, 316, sy + 1, PALETTE.ledGreen);
+    setPixel(png, 319, sy + 1, PALETTE.ledCyan);
+    setPixel(png, 322, sy + 1, PALETTE.ledAmber);
   }
-  // Dark crisp border
-  fillRect(png, 224, 64, 1, 11, PALETTE.black);
-  setPixel(png, 225, 75, PALETTE.black);
-  setPixel(png, 226, 74, PALETTE.black);
-  setPixel(png, 227, 73, PALETTE.black);
-  setPixel(png, 228, 74, PALETTE.black);
-  setPixel(png, 229, 76, PALETTE.black);
-  setPixel(png, 230, 77, PALETTE.black);
+
+  // ====================================================
+  // ROW 3: 2.5D CONFERENCE ROOM & BREAKOUT LOUNGE (y = 256 to 351)
+  // ====================================================
 
   // --------------------------------------------------
-  // OBJECT: Large Conference Table & Meeting Setup (64x48) at [0, 128]
-  // Polished meeting table with conference phone mic puck, laptops, notebooks, water glasses
+  // PROP 8: 2.5D Executive Conference Table (96x64) at [0, 256]
+  // Large beveled walnut oval table, center conference phone, open laptops
   // --------------------------------------------------
-  // Table floor shadow
-  fillRect(png, 4, 166, 56, 8, PALETTE.floorShadow);
+  fillIsoDiamond(png, 4, 304, 88, 36, PALETTE.floorShadow);
+  // Chrome pedestal legs
+  fillRect(png, 24, 290, 6, 20, PALETTE.chairChromeShadow);
+  fillRect(png, 20, 308, 14, 3, PALETTE.chairChrome);
+  fillRect(png, 66, 290, 6, 20, PALETTE.chairChromeShadow);
+  fillRect(png, 62, 308, 14, 3, PALETTE.chairChrome);
 
-  // Sleek conference table chrome pedestal legs (y=154 to 170)
-  fillRect(png, 10, 154, 6, 14, PALETTE.confLeg);
-  fillRect(png, 8, 167, 10, 2, PALETTE.chairChrome);
-  fillRect(png, 48, 154, 6, 14, PALETTE.confLeg);
-  fillRect(png, 46, 167, 10, 2, PALETTE.chairChrome);
+  // Walnut Table Surface (large 88x34 diamond at y=274)
+  fillIsoDiamond(png, 4, 274, 88, 34, PALETTE.confWoodTop);
+  // Bevel sides
+  for (let y = 0; y < 4; y++) {
+    for (let x = 4; x <= 48; x++) {
+      const edgeY = 274 + 17 + Math.round((x - 4) * 0.38) + y;
+      setPixel(png, x, edgeY, PALETTE.confWoodSide);
+    }
+    for (let x = 48; x <= 92; x++) {
+      const edgeY = 274 + 34 - Math.round((x - 48) * 0.38) + y;
+      setPixel(png, x, edgeY, PALETTE.confWoodShadow);
+    }
+  }
+  fillIsoDiamond(png, 4, 274, 88, 34, PALETTE.transparent, PALETTE.woodHighlight);
 
-  // Rounded modern conference table top (60x22 at x=2, y=134 to 156)
-  fillGradientV(png, 2, 134, 60, 22, PALETTE.confWoodBevel, PALETTE.confWoodTop);
-  // Rounded end bevels
-  fillRect(png, 2, 134, 60, 1, PALETTE.woodHighlight);
-  fillRect(png, 2, 155, 60, 1, PALETTE.woodSeam);
+  // Center Conference Spider Phone Puck
+  fillIsoDiamond(png, 42, 287, 12, 6, PALETTE.micPuck);
+  setPixel(png, 47, 289, PALETTE.micPuckGreen);
+  setPixel(png, 48, 289, PALETTE.micPuckGreen);
 
-  // Center Conference Spider Microphone Puck (x=29, y=142)
-  fillRect(png, 28, 142, 8, 5, PALETTE.micPuck);
-  setPixel(png, 31, 144, PALETTE.micPuckGreen); // active conference call LED
-  setPixel(png, 32, 144, PALETTE.micPuckGreen);
+  // Left Laptop open on table
+  fillRect(png, 22, 283, 10, 7, PALETTE.laptopSilver);
+  fillRect(png, 23, 284, 8, 5, PALETTE.monitorScreenBg);
+  fillRect(png, 24, 286, 6, 1, PALETTE.syntaxCyan); // slide chart
 
-  // Left Open Laptop (12x8 at x=10, y=138)
-  fillRect(png, 10, 138, 12, 8, PALETTE.laptopSilver);
-  fillRect(png, 11, 139, 10, 6, PALETTE.screenCodeBg);
-  fillRect(png, 12, 141, 4, 3, PALETTE.syntaxFunction); // mini chart on screen
-  fillRect(png, 17, 140, 3, 4, PALETTE.statusGreen);
+  // Right Laptop open on table
+  fillRect(png, 64, 283, 10, 7, PALETTE.laptopSilver);
+  fillRect(png, 65, 284, 8, 5, PALETTE.monitorScreenBg);
+  fillRect(png, 66, 286, 6, 1, PALETTE.syntaxYellow);
 
-  // Right Open Laptop (12x8 at x=42, y=138)
-  fillRect(png, 42, 138, 12, 8, PALETTE.laptopSilver);
-  fillRect(png, 43, 139, 10, 6, PALETTE.screenCodeBg);
-  fillRect(png, 44, 141, 7, 1, PALETTE.syntaxKeyword);
-  fillRect(png, 44, 143, 5, 1, PALETTE.syntaxString);
-
-  // Meeting Notebooks & Water Glasses
-  fillRect(png, 23, 144, 4, 5, PALETTE.bookSpineRed); // notebook
-  setPixel(png, 24, 143, PALETTE.black); // pen
-  fillRect(png, 37, 144, 3, 4, PALETTE.glassWater); // water tumbler
-  setPixel(png, 38, 144, PALETTE.white);
-
-  // --------------------------------------------------
-  // OBJECT: Modern Conference Meeting Chair (32x32) at [64, 128]
-  // Cantilever chrome base with charcoal mesh back
-  // --------------------------------------------------
-  fillRect(png, 70, 154, 20, 5, PALETTE.floorShadow);
-  // Chrome sled base
-  fillRect(png, 72, 150, 16, 2, PALETTE.chairChrome);
-  fillRect(png, 72, 144, 2, 8, PALETTE.chairChrome);
-  fillRect(png, 86, 144, 2, 8, PALETTE.chairChrome);
-  // Seat cushion
-  fillGradientV(png, 70, 142, 20, 6, PALETTE.chairMeshLight, PALETTE.chairMesh);
-  // Mesh backrest
-  fillGradientV(png, 72, 132, 16, 10, PALETTE.chairMesh, PALETTE.chairMeshLight);
-  fillRect(png, 72, 132, 16, 1, PALETTE.chairFrame);
+  // Water tumblers & notebooks
+  fillRect(png, 36, 288, 3, 4, [186, 230, 253, 200]);
+  fillRect(png, 56, 288, 5, 4, [225, 29, 72, 255]); // red notebook
 
   // --------------------------------------------------
-  // OBJECT: Cozy Breakout Lounge Sofa (48x32) at [96, 128]
-  // Modern startup breakout couch with deep teal fabric and wooden peg legs
+  // PROP 9: 2.5D Cantilever Conference Chair (32x48) at [96, 256]
   // --------------------------------------------------
-  fillRect(png, 98, 154, 44, 5, PALETTE.floorShadow);
-  // Wooden angled peg legs
-  fillRect(png, 100, 151, 3, 5, PALETTE.woodDark);
-  fillRect(png, 137, 151, 3, 5, PALETTE.woodDark);
-
-  // Sofa Base & Seat Cushions (44x12 at x=98, y=142)
-  const sofaTealLight: RGBA = [30, 95, 110, 255];
-  const sofaTealMid: RGBA = [20, 75, 88, 255];
-  const sofaTealDark: RGBA = [14, 55, 65, 255];
-  fillGradientV(png, 98, 142, 44, 10, sofaTealLight, sofaTealMid);
-  fillRect(png, 119, 142, 1, 10, sofaTealDark); // cushion split
-
-  // Sofa Backrest & Padded Armrests
-  fillGradientV(png, 98, 132, 44, 10, sofaTealMid, sofaTealDark);
-  fillRect(png, 98, 132, 44, 1, sofaTealLight);
-  // Left & Right Armrests
-  fillRect(png, 96, 136, 4, 12, sofaTealLight);
-  fillRect(png, 140, 136, 4, 12, sofaTealLight);
-
-  // Throw Pillow (Coral/Yellow accent)
-  fillRect(png, 101, 137, 7, 7, PALETTE.stickyYellow);
-  fillRect(png, 102, 138, 5, 5, PALETTE.stickyYellowDark);
+  fillIsoDiamond(png, 100, 292, 24, 10, PALETTE.floorShadow);
+  fillRect(png, 104, 292, 16, 2, PALETTE.chairChrome);
+  fillRect(png, 104, 284, 2, 8, PALETTE.chairChrome);
+  fillRect(png, 118, 284, 2, 8, PALETTE.chairChrome);
+  // Mesh seat & backrest
+  fillIsoDiamond(png, 102, 280, 20, 10, PALETTE.chairMeshLight);
+  fillRect(png, 104, 264, 16, 16, PALETTE.chairMeshMid);
+  fillRect(png, 104, 264, 16, 1, PALETTE.chairChrome);
 
   // --------------------------------------------------
-  // OBJECT: Low Coffee / Breakout Table (32x32) at [144, 128]
+  // PROP 10: 2.5D Modern Breakout Lounge Sofa (64x64) at [128, 256]
+  // Deep emerald/teal velvet sofa with mustard accent pillow & wooden peg legs
   // --------------------------------------------------
-  fillRect(png, 148, 154, 24, 4, PALETTE.floorShadow);
-  // Wooden legs
-  fillRect(png, 150, 148, 2, 6, PALETTE.woodDark);
-  fillRect(png, 168, 148, 2, 6, PALETTE.woodDark);
-  // Table top surface (24x8 at x=148, y=142)
-  fillGradientV(png, 148, 142, 24, 7, PALETTE.deskOakLight, PALETTE.deskOakMid);
-  fillRect(png, 148, 142, 24, 1, PALETTE.woodHighlight);
-  // Tech magazine & mini coffee mug
-  fillRect(png, 152, 143, 6, 4, PALETTE.syntaxKeyword);
-  fillRect(png, 162, 143, 3, 3, PALETTE.mugCeramic);
+  fillIsoDiamond(png, 132, 302, 56, 22, PALETTE.floorShadow);
+  // Peg wooden legs
+  fillRect(png, 138, 300, 3, 8, PALETTE.woodTopDark);
+  fillRect(png, 178, 300, 3, 8, PALETTE.woodTopDark);
+  fillRect(png, 158, 310, 3, 8, PALETTE.woodTopDark);
+
+  // Sofa Base Cushion
+  drawIsoPrism(png, 160, 298, 48, 22, 12, PALETTE.sofaTealTop, PALETTE.sofaTealSide, PALETTE.sofaTealShadow);
+  // Sofa Backrest
+  drawIsoPrism(png, 152, 286, 44, 14, 16, PALETTE.sofaTealSide, PALETTE.sofaTealShadow, PALETTE.sofaTealTop);
+  // Throw pillow (mustard yellow)
+  fillRect(png, 166, 284, 8, 8, PALETTE.pillowYellow);
+  fillRect(png, 167, 285, 6, 6, PALETTE.stickyYellow);
+
+  // --------------------------------------------------
+  // PROP 11: 2.5D Modern Low Coffee Table (48x32) at [192, 256]
+  // --------------------------------------------------
+  fillIsoDiamond(png, 196, 276, 40, 16, PALETTE.floorShadow);
+  drawIsoPrism(png, 216, 272, 32, 16, 8, PALETTE.deskSurfaceTop, PALETTE.deskSurfaceSide, PALETTE.deskSurfaceShadow);
+  // Tech magazine & coffee mug
+  fillRect(png, 210, 262, 6, 4, PALETTE.syntaxCyan);
+  fillRect(png, 220, 261, 3, 3, PALETTE.white);
+
+  // --------------------------------------------------
+  // PROP 12: Classic FF White Pointing Glove Cursor (24x24) at [240, 256]
+  // --------------------------------------------------
+  const cursorMap = [
+    [0, 0], [1, 0], [2, 0],
+    [0, 1], [1, 1], [2, 1], [3, 1], [4, 1],
+    [0, 2], [1, 2], [2, 2], [3, 2], [4, 2], [5, 2], [6, 2],
+    [1, 3], [2, 3], [3, 3], [4, 3], [5, 3], [6, 3], [7, 3], [8, 3],
+    [2, 4], [3, 4], [4, 4], [5, 4], [6, 4], [7, 4], [8, 4],
+    [3, 5], [4, 5], [5, 5], [6, 5], [7, 5],
+  ];
+  for (const [cx, cy] of cursorMap) {
+    setPixel(png, 244 + cx * 2, 260 + cy * 2, PALETTE.white);
+    setPixel(png, 245 + cx * 2, 260 + cy * 2, PALETTE.white);
+    setPixel(png, 244 + cx * 2, 261 + cy * 2, PALETTE.white);
+    setPixel(png, 245 + cx * 2, 261 + cy * 2, PALETTE.white);
+  }
+  // Crisp dark outline
+  for (let x = 242; x < 262; x++) {
+    for (let y = 258; y < 274; y++) {
+      if (png.data[(png.width * y + x) * 4 + 3] === 255) {
+        // check neighbors
+        for (const [nx, ny] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) {
+          const nidx = (png.width * (y + ny) + (x + nx)) * 4;
+          if (png.data[nidx + 3] === 0) {
+            setPixel(png, x + nx, y + ny, PALETTE.black);
+          }
+        }
+      }
+    }
+  }
+
+  // --------------------------------------------------
+  // PROP 13: Drop Dust / Landing Sparkle (32x32) at [264, 256]
+  // Used when an agent is dropped back onto the floor
+  // --------------------------------------------------
+  fillIsoDiamond(png, 268, 272, 24, 10, [255, 255, 255, 120]);
+  setPixel(png, 280, 268, PALETTE.goldStar);
+  setPixel(png, 276, 274, PALETTE.goldStar);
+  setPixel(png, 284, 274, PALETTE.goldStar);
+  setPixel(png, 280, 278, PALETTE.goldStar);
 
   return png;
 }
 
 // ====================================================
-// 2. GENERATE HIGH-QUALITY MODERN TECH CHARACTER SPRITESHEETS (128x384)
-// (Pi, Claude, Codex, Gemini - 4 frames x 8 rows, 32x48 per frame)
+// 2. GENERATE MODERN 2.5D CHARACTER SPRITESHEETS (128x432)
+// (4 frames wide x 32px, 9 rows high x 48px)
+// Proportions & style: Modern Final Fantasy 6+ / Tactics simulation developer
 // ====================================================
 export interface TechAgentTheme {
   name: string;
@@ -957,215 +1046,204 @@ export interface TechAgentTheme {
   chestLogo?: 'pi' | 'c' | 'code' | 'gemini';
 }
 
-function drawDeveloperFrame(
+function drawDeveloperFrame25D(
   png: PNG,
   frame: number,
   row: number,
   theme: TechAgentTheme,
-  action: 'idle' | 'walk' | 'type' | 'think' | 'celebrate',
-  dir: 'down' | 'up' | 'side'
+  action: 'idle' | 'walk' | 'type' | 'think' | 'celebrate' | 'dragged',
+  dir: 'se' | 'ne' | 'sw'
 ) {
   const ox = frame * 32;
   const oy = row * 48;
 
-  // Natural breathing bob / walk stride bounce
+  // Stride bounce & breathing
   const idleBob = (action === 'idle' || action === 'type') && frame % 2 === 1 ? 1 : 0;
   const walkBob = action === 'walk' ? (frame % 2 === 1 ? -1 : 1) : 0;
-  const yOffset = idleBob + walkBob;
+  const dragFloat = action === 'dragged' ? -12 : 0; // Float 12px in the air while dragged!
+  const yOffset = idleBob + walkBob + dragFloat;
 
-  // Drop shadow beneath sneakers
-  fillRect(png, ox + 8, oy + 44, 16, 3, PALETTE.floorShadow);
-
-  // 1. PANTS & SNEAKERS (y=34 to 45)
-  const leftLegOffset = action === 'walk' && (frame === 1 || frame === 3) ? -2 : 0;
-  const rightLegOffset = action === 'walk' && (frame === 0 || frame === 2) ? -2 : 0;
-
-  if (dir === 'side') {
-    // Side profile legs & sneakers
-    fillRect(png, ox + 12, oy + 34, 7, 8, theme.pantsColor);
-    fillRect(png, ox + 11, oy + 42, 9, 3, theme.shoesColor);
-    fillRect(png, ox + 11, oy + 44, 9, 1, PALETTE.white); // sneaker sole
+  // Floor Shadow beneath sneakers (remains on floor even when dragged!)
+  if (action === 'dragged') {
+    // Faint smaller shadow on floor beneath picked-up hero
+    fillIsoDiamond(png, ox + 6, oy + 40, 20, 8, [12, 16, 26, 80]);
   } else {
-    // Left leg
-    fillRect(png, ox + 10, oy + 34, 5, 8 + leftLegOffset, theme.pantsColor);
-    fillRect(png, ox + 9, oy + 42 + leftLegOffset, 6, 3, theme.shoesColor);
-    fillRect(png, ox + 9, oy + 44 + leftLegOffset, 6, 1, PALETTE.white);
-    // Right leg
-    fillRect(png, ox + 17, oy + 34, 5, 8 + rightLegOffset, theme.pantsColor);
-    fillRect(png, ox + 17, oy + 42 + rightLegOffset, 6, 3, theme.shoesColor);
-    fillRect(png, ox + 17, oy + 44 + rightLegOffset, 6, 1, PALETTE.white);
+    fillIsoDiamond(png, ox + 6, oy + 40, 20, 8, PALETTE.floorShadow);
   }
 
-  // 2. TORSO / HOODIE / SWEATER (y=20 to 34)
-  const torsoY = oy + 20 + yOffset;
+  // 1. PANTS & SNEAKERS (y = 32 to 44)
+  const legSwing = action === 'walk' ? (frame % 2 === 0 ? 2 : -2) : 0;
+  const dangleLeg = action === 'dragged' ? (frame % 2 === 0 ? 2 : -1) : 0;
+
+  if (dir === 'se') {
+    // South-East 3/4 Isometric View:
+    // Left leg (far leg)
+    fillRect(png, ox + 11, oy + 32 + yOffset, 4, 8 - legSwing + dangleLeg, theme.pantsColor);
+    fillRect(png, ox + 10, oy + 40 + yOffset - legSwing + dangleLeg, 5, 3, theme.shoesColor);
+    fillRect(png, ox + 10, oy + 42 + yOffset - legSwing + dangleLeg, 5, 1, PALETTE.white);
+    // Right leg (near leg)
+    fillRect(png, ox + 17, oy + 32 + yOffset, 5, 9 + legSwing - dangleLeg, theme.pantsColor);
+    fillRect(png, ox + 17, oy + 41 + yOffset + legSwing - dangleLeg, 6, 3, theme.shoesColor);
+    fillRect(png, ox + 17, oy + 43 + yOffset + legSwing - dangleLeg, 6, 1, PALETTE.white);
+  } else if (dir === 'sw') {
+    // South-West 3/4 Isometric View:
+    fillRect(png, ox + 10, oy + 32 + yOffset, 5, 9 + legSwing - dangleLeg, theme.pantsColor);
+    fillRect(png, ox + 9, oy + 41 + yOffset + legSwing - dangleLeg, 6, 3, theme.shoesColor);
+    fillRect(png, ox + 9, oy + 43 + yOffset + legSwing - dangleLeg, 6, 1, PALETTE.white);
+    fillRect(png, ox + 17, oy + 32 + yOffset, 4, 8 - legSwing + dangleLeg, theme.pantsColor);
+    fillRect(png, ox + 17, oy + 40 + yOffset - legSwing + dangleLeg, 5, 3, theme.shoesColor);
+    fillRect(png, ox + 17, oy + 42 + yOffset - legSwing + dangleLeg, 5, 1, PALETTE.white);
+  } else {
+    // North-East Isometric View (facing desk/away):
+    fillRect(png, ox + 11, oy + 32 + yOffset, 4, 8 + legSwing, theme.pantsColor);
+    fillRect(png, ox + 11, oy + 40 + yOffset + legSwing, 5, 3, theme.shoesColor);
+    fillRect(png, ox + 17, oy + 32 + yOffset, 4, 8 - legSwing, theme.pantsColor);
+    fillRect(png, ox + 17, oy + 40 + yOffset - legSwing, 5, 3, theme.shoesColor);
+  }
+
+  // 2. TORSO / HOODIE / CLOTHING (y = 18 to 32)
+  const torsoY = oy + 18 + yOffset;
   fillRect(png, ox + 9, torsoY, 14, 14, theme.hoodieColor);
-  fillRect(png, ox + 9, torsoY + 12, 14, 2, theme.hoodieDark); // waistband
+  fillRect(png, ox + 9, torsoY + 12, 14, 2, theme.hoodieDark); // hem
   fillRect(png, ox + 9, torsoY, 14, 1, theme.hoodieLight); // shoulder highlight
 
-  // Brand Chest Emblem or Hoodie Drawstring (Front View)
-  if (dir === 'down') {
+  // Brand Chest Emblem or Logo (Front/Side 3/4 view)
+  if (dir === 'se' || dir === 'sw') {
+    const lx = dir === 'se' ? ox + 14 : ox + 12;
     if (theme.chestLogo === 'pi') {
-      // Elegant Pi 'π' chest badge
-      fillRect(png, ox + 14, torsoY + 4, 4, 1, theme.brandAccent);
-      fillRect(png, ox + 14, torsoY + 5, 1, 3, theme.brandAccent);
-      fillRect(png, ox + 17, torsoY + 5, 1, 3, theme.brandAccent);
+      fillRect(png, lx, torsoY + 4, 4, 1, theme.brandAccent);
+      fillRect(png, lx, torsoY + 5, 1, 3, theme.brandAccent);
+      fillRect(png, lx + 3, torsoY + 5, 1, 3, theme.brandAccent);
     } else if (theme.chestLogo === 'c') {
-      // Anthropic Claude 'C' / chevron
-      fillRect(png, ox + 14, torsoY + 4, 4, 1, theme.brandAccent);
-      fillRect(png, ox + 14, torsoY + 5, 1, 2, theme.brandAccent);
-      fillRect(png, ox + 14, torsoY + 7, 4, 1, theme.brandAccent);
+      fillRect(png, lx, torsoY + 4, 4, 1, theme.brandAccent);
+      fillRect(png, lx, torsoY + 5, 1, 2, theme.brandAccent);
+      fillRect(png, lx, torsoY + 7, 4, 1, theme.brandAccent);
     } else if (theme.chestLogo === 'code') {
-      // OpenAI Codex code brackets '<>'
-      setPixel(png, ox + 14, torsoY + 5, theme.brandAccent);
-      setPixel(png, ox + 17, torsoY + 5, theme.brandAccent);
+      setPixel(png, lx, torsoY + 5, theme.brandAccent);
+      setPixel(png, lx + 3, torsoY + 5, theme.brandAccent);
     } else if (theme.chestLogo === 'gemini') {
-      // Gemini sparkle star diamond
-      fillRect(png, ox + 15, torsoY + 4, 2, 3, theme.brandAccent);
-      fillRect(png, ox + 14, torsoY + 5, 4, 1, theme.brandAccent);
-    } else {
-      // Subtle hoodie drawstring lines
-      fillRect(png, ox + 14, torsoY + 2, 1, 4, PALETTE.white);
-      fillRect(png, ox + 17, torsoY + 2, 1, 4, PALETTE.white);
+      fillRect(png, lx + 1, torsoY + 4, 2, 3, theme.brandAccent);
+      fillRect(png, lx, torsoY + 5, 4, 1, theme.brandAccent);
     }
   }
 
-  // 3. HEAD, FACE, GLASSES & STYLISH HAIR (y=6 to 20)
-  const headY = oy + 6 + yOffset;
+  // 3. HEAD, EXPRESSIVE FACE & STYLISH HAIR (y = 5 to 19)
+  const headY = oy + 5 + yOffset;
 
-  if (dir === 'down') {
-    // Face skin
-    fillRect(png, ox + 10, headY + 5, 12, 10, theme.skinColor);
-    fillRect(png, ox + 11, headY + 13, 10, 2, theme.skinShadow); // neck shadow
+  if (dir === 'se' || dir === 'sw') {
+    // 3/4 View Head & Face
+    fillRect(png, ox + 10, headY + 4, 12, 10, theme.skinColor);
+    fillRect(png, ox + 11, headY + 12, 10, 2, theme.skinShadow);
 
-    // Expressive Eyes with Pupils and Specular Highlights
+    // Expressive Eyes
     if (action === 'celebrate') {
-      // Happy curved anime eyes (^_^)
-      fillRect(png, ox + 12, headY + 7, 3, 1, PALETTE.black);
-      fillRect(png, ox + 17, headY + 7, 3, 1, PALETTE.black);
-      setPixel(png, ox + 11, headY + 8, PALETTE.black);
-      setPixel(png, ox + 14, headY + 8, PALETTE.black);
-      setPixel(png, ox + 16, headY + 8, PALETTE.black);
-      setPixel(png, ox + 19, headY + 8, PALETTE.black);
+      // Cheerful anime curved eyes (^_^)
+      fillRect(png, ox + 12, headY + 6, 3, 1, PALETTE.black);
+      fillRect(png, ox + 17, headY + 6, 3, 1, PALETTE.black);
+      setPixel(png, ox + 11, headY + 7, PALETTE.black);
+      setPixel(png, ox + 14, headY + 7, PALETTE.black);
+      setPixel(png, ox + 16, headY + 7, PALETTE.black);
+      setPixel(png, ox + 19, headY + 7, PALETTE.black);
+    } else if (action === 'dragged') {
+      // Surprised cute wide eyes (o_o) while being dragged!
+      fillRect(png, ox + 12, headY + 6, 3, 4, PALETTE.white);
+      fillRect(png, ox + 17, headY + 6, 3, 4, PALETTE.white);
+      fillRect(png, ox + 13, headY + 7, 2, 2, PALETTE.black);
+      fillRect(png, ox + 18, headY + 7, 2, 2, PALETTE.black);
+      setPixel(png, ox + 13, headY + 7, PALETTE.white); // shine
+      setPixel(png, ox + 18, headY + 7, PALETTE.white);
+      // Small open mouth :o
+      fillRect(png, ox + 15, headY + 11, 2, 2, theme.skinShadow);
     } else if (action === 'think') {
-      // Thinking / looking up quizzical eyes
+      // Quizzical look
       fillRect(png, ox + 12, headY + 6, 3, 3, PALETTE.white);
       fillRect(png, ox + 17, headY + 6, 3, 3, PALETTE.white);
       setPixel(png, ox + 13, headY + 6, PALETTE.black);
       setPixel(png, ox + 18, headY + 6, PALETTE.black);
-      // One raised eyebrow
       fillRect(png, ox + 12, headY + 5, 3, 1, theme.hairColor);
       fillRect(png, ox + 17, headY + 4, 3, 1, theme.hairColor);
     } else {
-      // Focused eyes
-      fillRect(png, ox + 12, headY + 8, 3, 2, PALETTE.white);
-      fillRect(png, ox + 17, headY + 8, 3, 2, PALETTE.white);
-      setPixel(png, ox + 13, headY + 8, PALETTE.black);
-      setPixel(png, ox + 18, headY + 8, PALETTE.black);
-      setPixel(png, ox + 12, headY + 8, PALETTE.white); // specular shine
-      setPixel(png, ox + 17, headY + 8, PALETTE.white);
-      // Eyebrows
-      fillRect(png, ox + 12, headY + 6, 3, 1, theme.hairColor);
-      fillRect(png, ox + 17, headY + 6, 3, 1, theme.hairColor);
+      // Focused intelligent eyes
+      fillRect(png, ox + 12, headY + 7, 3, 2, PALETTE.white);
+      fillRect(png, ox + 17, headY + 7, 3, 2, PALETTE.white);
+      setPixel(png, ox + 13, headY + 7, PALETTE.black);
+      setPixel(png, ox + 18, headY + 7, PALETTE.black);
+      setPixel(png, ox + 12, headY + 7, PALETTE.white);
+      setPixel(png, ox + 17, headY + 7, PALETTE.white);
+      fillRect(png, ox + 12, headY + 5, 3, 1, theme.hairColor);
+      fillRect(png, ox + 17, headY + 5, 3, 1, theme.hairColor);
     }
 
     // Modern Stylish Glasses
     if (theme.hasGlasses) {
-      fillRect(png, ox + 11, headY + 7, 4, 3, PALETTE.black);
-      fillRect(png, ox + 17, headY + 7, 4, 3, PALETTE.black);
-      fillRect(png, ox + 15, headY + 8, 2, 1, PALETTE.black); // bridge
-      // Subtle glass glare glint
-      setPixel(png, ox + 12, headY + 7, PALETTE.windowGlassGlare);
-      setPixel(png, ox + 18, headY + 7, PALETTE.windowGlassGlare);
+      fillRect(png, ox + 11, headY + 6, 4, 3, PALETTE.black);
+      fillRect(png, ox + 17, headY + 6, 4, 3, PALETTE.black);
+      fillRect(png, ox + 15, headY + 7, 2, 1, PALETTE.black);
+      setPixel(png, ox + 12, headY + 6, PALETTE.glassGlare);
+      setPixel(png, ox + 18, headY + 6, PALETTE.glassGlare);
     }
-
-    // Cheerful blush & subtle smile
-    setPixel(png, ox + 11, headY + 11, [248, 165, 150, 255]);
-    setPixel(png, ox + 20, headY + 11, [248, 165, 150, 255]);
-    fillRect(png, ox + 14, headY + 12, 4, 1, theme.skinShadow);
 
     // Layered Textured Hair
     fillRect(png, ox + 9, headY, 14, 6, theme.hairColor);
     fillRect(png, ox + 10, headY - 1, 12, 2, theme.hairHighlight);
-    fillRect(png, ox + 8, headY + 2, 2, 6, theme.hairColor); // left fringe
-    fillRect(png, ox + 22, headY + 2, 2, 6, theme.hairColor); // right fringe
-    // Front bangs styling
+    fillRect(png, ox + 8, headY + 2, 2, 6, theme.hairColor);
+    fillRect(png, ox + 22, headY + 2, 2, 6, theme.hairColor);
     fillRect(png, ox + 11, headY + 4, 2, 2, theme.hairColor);
     fillRect(png, ox + 15, headY + 4, 3, 2, theme.hairColor);
-  } else if (dir === 'up') {
-    // Back of head - full hair volume and hoodie collar
+  } else {
+    // Back View (NE): Hair volume and back collar
     fillRect(png, ox + 9, headY, 14, 14, theme.hairColor);
     fillRect(png, ox + 10, headY - 1, 12, 3, theme.hairHighlight);
     fillRect(png, ox + 8, headY + 3, 2, 10, theme.hairColor);
     fillRect(png, ox + 22, headY + 3, 2, 10, theme.hairColor);
-    fillRect(png, ox + 10, headY + 13, 12, 2, theme.hoodieDark); // back collar
-  } else {
-    // Side profile
-    fillRect(png, ox + 10, headY, 12, 6, theme.hairColor);
-    fillRect(png, ox + 14, headY + 5, 8, 9, theme.skinColor);
-    setPixel(png, ox + 18, headY + 8, PALETTE.black); // eye
-    if (theme.hasGlasses) {
-      fillRect(png, ox + 16, headY + 7, 4, 2, PALETTE.black);
-      setPixel(png, ox + 17, headY + 7, PALETTE.white);
-    }
-    fillRect(png, ox + 9, headY + 2, 4, 10, theme.hairColor);
+    fillRect(png, ox + 10, headY + 12, 12, 2, theme.hoodieDark);
   }
 
   // 4. TECH ACCESSORIES (Headsets, Earbuds)
   if (theme.hasHeadset) {
-    // Over-ear developer headset with boom mic
-    fillRect(png, ox + 8, headY + 6, 2, 6, PALETTE.serverCabinet);
-    fillRect(png, ox + 22, headY + 6, 2, 6, PALETTE.serverCabinet);
-    setPixel(png, ox + 8, headY + 8, theme.brandAccent); // status LED
-    setPixel(png, ox + 23, headY + 8, theme.brandAccent);
-    if (dir === 'down' || dir === 'side') {
-      // Boom mic extending toward mouth
-      fillRect(png, ox + 10, headY + 11, 3, 1, PALETTE.serverCabinet);
-      setPixel(png, ox + 13, headY + 11, theme.brandAccent);
+    fillRect(png, ox + 8, headY + 5, 2, 6, PALETTE.serverBlack);
+    fillRect(png, ox + 22, headY + 5, 2, 6, PALETTE.serverBlack);
+    setPixel(png, ox + 8, headY + 7, theme.brandAccent);
+    setPixel(png, ox + 23, headY + 7, theme.brandAccent);
+    if (dir === 'se') {
+      fillRect(png, ox + 10, headY + 10, 3, 1, PALETTE.serverBlack);
+      setPixel(png, ox + 13, headY + 10, theme.brandAccent);
     }
-  } else if (theme.hasEarbuds) {
-    // Modern wireless earbuds
-    setPixel(png, ox + 9, headY + 9, PALETTE.white);
-    setPixel(png, ox + 22, headY + 9, PALETTE.white);
-    setPixel(png, ox + 9, headY + 8, theme.brandAccent);
   }
 
-  // 5. ARMS, HANDS & ACTION ANIMATIONS
+  // 5. ARMS, HANDS & ACTION POSES
   if (action === 'type') {
     // Rapid typing at mechanical keyboard
     const handLeftY = frame % 2 === 0 ? -1 : 1;
     const handRightY = frame % 2 === 0 ? 1 : -1;
-    // Left arm & hand
     fillRect(png, ox + 6, torsoY + 2, 3, 7, theme.hoodieColor);
     fillRect(png, ox + 6, torsoY + 9 + handLeftY, 4, 3, theme.skinColor);
-    // Right arm & hand
     fillRect(png, ox + 23, torsoY + 2, 3, 7, theme.hoodieColor);
     fillRect(png, ox + 22, torsoY + 9 + handRightY, 4, 3, theme.skinColor);
-  } else if (action === 'think') {
-    // Reading documentation / thinking pose:
-    // Left hand holds tech tablet / notebook
-    fillRect(png, ox + 5, torsoY + 2, 3, 7, theme.hoodieColor);
-    fillRect(png, ox + 4, torsoY + 7, 5, 6, PALETTE.laptopSilver); // tablet
-    fillRect(png, ox + 5, torsoY + 8, 3, 4, PALETTE.screenCodeBg);
-    // Right hand scratching head / tapping chin
-    fillRect(png, ox + 23, torsoY - 1, 3, 7, theme.hoodieColor);
-    fillRect(png, ox + 21, headY + 8, 4, 3, theme.skinColor);
-    // Thinking sparkle / lightbulb dot on frame 2 & 3
-    if (frame >= 2) {
-      setPixel(png, ox + 25, headY - 2, PALETTE.stickyYellow);
-      setPixel(png, ox + 26, headY - 3, PALETTE.stickyYellow);
-    }
+    // Cyan monitor light reflection on chest & hands!
+    fillRect(png, ox + 11, torsoY + 8, 10, 1, PALETTE.syntaxCyan);
+  } else if (action === 'dragged') {
+    // Arms flailing out slightly in surprise while being held!
+    fillRect(png, ox + 4, torsoY - 2, 4, 8, theme.hoodieColor);
+    fillRect(png, ox + 24, torsoY - 2, 4, 8, theme.hoodieColor);
+    fillRect(png, ox + 3, torsoY + 5, 3, 3, theme.skinColor);
+    fillRect(png, ox + 26, torsoY + 5, 3, 3, theme.skinColor);
   } else if (action === 'celebrate') {
-    // Arms raised in celebration / double thumbs-up!
+    // Arms raised high in victory!
     fillRect(png, ox + 5, torsoY - 6, 3, 10, theme.hoodieColor);
     fillRect(png, ox + 24, torsoY - 6, 3, 10, theme.hoodieColor);
     fillRect(png, ox + 4, torsoY - 9, 4, 4, theme.skinColor);
     fillRect(png, ox + 24, torsoY - 9, 4, 4, theme.skinColor);
-    // Golden accomplishment stars around hands
-    setPixel(png, ox + 2, torsoY - 10, PALETTE.statusAmber);
-    setPixel(png, ox + 28, torsoY - 10, PALETTE.statusAmber);
-    setPixel(png, ox + 16, headY - 4, PALETTE.statusGreen);
+    // Sparkle stars
+    setPixel(png, ox + 2, torsoY - 10, PALETTE.goldStar);
+    setPixel(png, ox + 28, torsoY - 10, PALETTE.goldStar);
+  } else if (action === 'think') {
+    fillRect(png, ox + 5, torsoY + 2, 3, 7, theme.hoodieColor);
+    fillRect(png, ox + 4, torsoY + 7, 5, 6, PALETTE.laptopSilver); // tablet
+    fillRect(png, ox + 23, torsoY - 1, 3, 7, theme.hoodieColor);
+    fillRect(png, ox + 21, headY + 8, 4, 3, theme.skinColor);
   } else {
-    // Standard resting / walking arms with natural counter-swing
+    // Normal resting / walking arms
     const armSwing = action === 'walk' ? (frame % 2 === 0 ? 2 : -2) : 0;
     fillRect(png, ox + 6, torsoY + 2 + armSwing, 3, 8, theme.hoodieColor);
     fillRect(png, ox + 6, torsoY + 10 + armSwing, 3, 3, theme.skinColor);
@@ -1174,42 +1252,43 @@ function drawDeveloperFrame(
   }
 }
 
-export function generateTechDeveloperSpritesheet(theme: TechAgentTheme): PNG {
-  const png = createPNG(128, 384); // 4 frames wide x 8 rows high
+export function generateTechDeveloperSpritesheet25D(theme: TechAgentTheme): PNG {
+  const png = createPNG(128, 432); // 4 frames x 9 rows (32x48 each)
 
-  // Row 0: Idle Down (Breathing / subtle blinking)
-  for (let f = 0; f < 4; f++) drawDeveloperFrame(png, f, 0, theme, 'idle', 'down');
-  // Row 1: Idle Up / Sitting (Back view facing workstation desk)
-  for (let f = 0; f < 4; f++) drawDeveloperFrame(png, f, 1, theme, 'idle', 'up');
-  // Row 2: Walk Down (Smooth 4-frame forward walk)
-  for (let f = 0; f < 4; f++) drawDeveloperFrame(png, f, 2, theme, 'walk', 'down');
-  // Row 3: Walk Up (Smooth 4-frame backward walk)
-  for (let f = 0; f < 4; f++) drawDeveloperFrame(png, f, 3, theme, 'walk', 'up');
-  // Row 4: Walk Side (Smooth 4-frame profile walk)
-  for (let f = 0; f < 4; f++) drawDeveloperFrame(png, f, 4, theme, 'walk', 'side');
-  // Row 5: Typing on Keyboard (Working at workstation desk)
-  for (let f = 0; f < 4; f++) drawDeveloperFrame(png, f, 5, theme, 'type', 'up');
-  // Row 6: Reading / Thinking (Reviewing PR / documentation / lightbulb)
-  for (let f = 0; f < 4; f++) drawDeveloperFrame(png, f, 6, theme, 'think', 'down');
-  // Row 7: Done / Celebratory (Thumbs up / triumph / sparkle celebration)
-  for (let f = 0; f < 4; f++) drawDeveloperFrame(png, f, 7, theme, 'celebrate', 'down');
+  // Row 0: Idle South-East (Breathing, facing forward-right)
+  for (let f = 0; f < 4; f++) drawDeveloperFrame25D(png, f, 0, theme, 'idle', 'se');
+  // Row 1: Idle North-East (Sitting/facing away towards workstation desk)
+  for (let f = 0; f < 4; f++) drawDeveloperFrame25D(png, f, 1, theme, 'idle', 'ne');
+  // Row 2: Walk South-East (Smooth 4-frame isometric walk)
+  for (let f = 0; f < 4; f++) drawDeveloperFrame25D(png, f, 2, theme, 'walk', 'se');
+  // Row 3: Walk North-East (Smooth 4-frame isometric walk away)
+  for (let f = 0; f < 4; f++) drawDeveloperFrame25D(png, f, 3, theme, 'walk', 'ne');
+  // Row 4: Walk South-West (Smooth 4-frame isometric walk forward-left)
+  for (let f = 0; f < 4; f++) drawDeveloperFrame25D(png, f, 4, theme, 'walk', 'sw');
+  // Row 5: Typing on Mechanical Keyboard (Hands tapping, monitor glow)
+  for (let f = 0; f < 4; f++) drawDeveloperFrame25D(png, f, 5, theme, 'type', 'ne');
+  // Row 6: Reading / Thinking / Reviewing PR
+  for (let f = 0; f < 4; f++) drawDeveloperFrame25D(png, f, 6, theme, 'think', 'se');
+  // Row 7: Done / Celebratory Fanfare (Arms up, sparkles)
+  for (let f = 0; f < 4; f++) drawDeveloperFrame25D(png, f, 7, theme, 'celebrate', 'se');
+  // Row 8: Dragged / Picked Up (Floating, surprised face, dangling legs!)
+  for (let f = 0; f < 4; f++) drawDeveloperFrame25D(png, f, 8, theme, 'dragged', 'se');
 
   return png;
 }
 
 // ====================================================
-// 3. MAIN ASSET PIPELINE EXECUTION
+// 3. MAIN PIPELINE EXECUTION
 // ====================================================
 const clientAssets = path.resolve(process.cwd(), 'client/public/assets');
-console.log('Generating 2D Pixel Art Modern Tech Office assets in:', clientAssets);
+console.log('Generating 2.5D Isometric Simulation Game assets in:', clientAssets);
 
-// 1. Generate Modern Office Tileset
+// 1. Generate Modern 2.5D Office Tileset (512x512)
 const tileset = generateModernOfficeTileset();
 savePNG(tileset, path.join(clientAssets, 'tiles/office_tiles.png'));
 
-// 2. Generate Modern Tech Developer Character Spritesheets
+// 2. Generate Developer Character Spritesheets (128x432)
 const agentThemes: Record<string, TechAgentTheme> = {
-  // Pi Agent: Minimalist powerhouse, dark slate hoodie with emerald green accent, headset with mic
   pi: {
     name: 'Pi',
     hoodieColor: [36, 40, 48, 255],
@@ -1221,141 +1300,134 @@ const agentThemes: Record<string, TechAgentTheme> = {
     hairHighlight: [78, 58, 44, 255],
     skinColor: [255, 226, 202, 255],
     skinShadow: [218, 164, 134, 255],
-    brandAccent: [34, 197, 94, 255], // Emerald green
+    brandAccent: [34, 197, 94, 255],
     hasHeadset: true,
     chestLogo: 'pi',
   },
-
-  // Claude Agent: Warm terracotta/coral sweater, round stylish glasses, neatly parted auburn hair
   claude: {
     name: 'Claude',
-    hoodieColor: [217, 83, 30, 255], // Warm terracotta
+    hoodieColor: [217, 83, 30, 255],
     hoodieLight: [244, 114, 62, 255],
     hoodieDark: [168, 58, 18, 255],
-    pantsColor: [72, 64, 54, 255], // Khaki chinos
-    shoesColor: [88, 52, 28, 255], // Leather shoes
+    pantsColor: [72, 64, 54, 255],
+    shoesColor: [88, 52, 28, 255],
     hairColor: [64, 36, 24, 255],
     hairHighlight: [118, 68, 38, 255],
     skinColor: [255, 228, 204, 255],
     skinShadow: [220, 168, 138, 255],
-    brandAccent: [250, 204, 21, 255], // Warm gold
+    brandAccent: [250, 204, 21, 255],
     hasGlasses: true,
     chestLogo: 'c',
   },
-
-  // Codex Agent: Royal cobalt blue jacket, studio over-ear headphones, blonde hair
   codex: {
     name: 'Codex',
-    hoodieColor: [30, 78, 200, 255], // Cobalt blue
+    hoodieColor: [30, 78, 200, 255],
     hoodieLight: [59, 130, 246, 255],
     hoodieDark: [22, 58, 150, 255],
     pantsColor: [24, 28, 36, 255],
     shoesColor: [44, 64, 98, 255],
-    hairColor: [232, 190, 80, 255], // Blonde
+    hairColor: [232, 190, 80, 255],
     hairHighlight: [254, 230, 136, 255],
     skinColor: [255, 230, 208, 255],
     skinShadow: [222, 170, 140, 255],
-    brandAccent: [34, 211, 238, 255], // Cyan
+    brandAccent: [34, 211, 238, 255],
     hasHeadset: true,
     chestLogo: 'code',
   },
-
-  // Gemini Agent: Modern lilac/electric violet pullover, wireless earbuds, smart glasses
   gemini: {
     name: 'Gemini',
-    hoodieColor: [124, 58, 237, 255], // Deep violet
-    hoodieLight: [167, 139, 250, 255],
-    hoodieDark: [91, 33, 182, 255],
-    pantsColor: [22, 28, 48, 255], // Navy joggers
-    shoesColor: [225, 215, 245, 255],
-    hairColor: [28, 24, 34, 255],
-    hairHighlight: [68, 46, 92, 255],
-    skinColor: [248, 214, 182, 255],
-    skinShadow: [214, 158, 126, 255],
-    brandAccent: [56, 189, 248, 255], // Electric cyan
-    hasGlasses: true,
+    hoodieColor: [90, 40, 180, 255],
+    hoodieLight: [147, 51, 234, 255],
+    hoodieDark: [60, 20, 130, 255],
+    pantsColor: [24, 24, 36, 255],
+    shoesColor: [220, 226, 240, 255],
+    hairColor: [180, 120, 240, 255],
+    hairHighlight: [220, 180, 255, 255],
+    skinColor: [255, 228, 206, 255],
+    skinShadow: [220, 168, 140, 255],
+    brandAccent: [192, 132, 252, 255],
     hasEarbuds: true,
     chestLogo: 'gemini',
   },
 };
 
-for (const [name, theme] of Object.entries(agentThemes)) {
-  const charSheet = generateTechDeveloperSpritesheet(theme);
-  savePNG(charSheet, path.join(clientAssets, `characters/character_${name}.png`));
+for (const [key, theme] of Object.entries(agentThemes)) {
+  const sprite = generateTechDeveloperSpritesheet25D(theme);
+  savePNG(sprite, path.join(clientAssets, `characters/character_${key}.png`));
 }
 
-// 3. Asset Manifest JSON
+// 3. Generate Asset Manifest JSON
 const manifest = {
-  name: 'herdr-office-pixel-art',
-  version: '4.0.0',
-  tileSize: 32,
+  name: 'herdr-office-2.5d-isometric',
+  version: '5.0.0',
+  tileSize: 32, // nominal grid cell
+  isoTileWidth: 64,
+  isoTileHeight: 32,
   tileset: {
     path: '/assets/tiles/office_tiles.png',
-    width: 256,
-    height: 256,
+    width: 512,
+    height: 512,
     tiles: {
-      // Floors
-      floor_wood: { x: 0, y: 0, w: 32, h: 32 },
-      floor_carpet: { x: 32, y: 0, w: 32, h: 32 },
-      floor_tile: { x: 64, y: 0, w: 32, h: 32 },
-      floor_stone: { x: 64, y: 0, w: 32, h: 32 }, // alias for breakroom tile
+      floor_wood: { x: 0, y: 0, w: 64, h: 32 },
+      floor_carpet: { x: 64, y: 0, w: 64, h: 32 },
+      floor_tile: { x: 128, y: 0, w: 64, h: 32 },
+      floor_stone: { x: 128, y: 0, w: 64, h: 32 },
+      floor_conference: { x: 192, y: 0, w: 64, h: 32 },
+      foundation_edge_sw: { x: 256, y: 0, w: 64, h: 48 },
+      foundation_edge_se: { x: 320, y: 0, w: 64, h: 48 },
+      grid_cell_hover: { x: 384, y: 0, w: 64, h: 32 },
+      selection_halo: { x: 448, y: 0, w: 64, h: 32 },
+
       // Walls
-      wall_top: { x: 96, y: 0, w: 32, h: 48 },
-      wall_window: { x: 128, y: 0, w: 32, h: 48 },
-      wall_whiteboard: { x: 160, y: 0, w: 32, h: 48 },
-      wall_server: { x: 192, y: 0, w: 32, h: 48 },
-      wall_bookshelf: { x: 224, y: 0, w: 32, h: 48 },
-      // Furniture & Workstations
-      desk: { x: 0, y: 64, w: 64, h: 48 },
-      chair: { x: 64, y: 64, w: 32, h: 32 },
-      plant: { x: 96, y: 64, w: 32, h: 48 },
-      water_cooler: { x: 128, y: 64, w: 32, h: 48 },
-      espresso_bar: { x: 160, y: 64, w: 32, h: 48 },
-      coffee_bar: { x: 160, y: 64, w: 32, h: 48 },
-      // Meeting & Lounge
-      conference_table: { x: 0, y: 128, w: 64, h: 48 },
-      conference_chair: { x: 64, y: 128, w: 32, h: 32 },
-      lounge_sofa: { x: 96, y: 128, w: 48, h: 32 },
-      coffee_table: { x: 144, y: 128, w: 32, h: 32 },
-      // UI Elements
-      office_dialog: { x: 192, y: 64, w: 32, h: 32 },
-      cursor_hand: { x: 224, y: 64, w: 16, h: 16 },
-      cursor_pointer: { x: 224, y: 64, w: 16, h: 16 },
+      wall_top: { x: 192, y: 64, w: 64, h: 96 },
+      wall_window: { x: 0, y: 64, w: 64, h: 96 },
+      wall_whiteboard: { x: 64, y: 64, w: 64, h: 96 },
+      wall_server: { x: 128, y: 64, w: 64, h: 96 },
+      wall_bookshelf: { x: 256, y: 64, w: 64, h: 96 },
+      wall_dashboard: { x: 320, y: 64, w: 64, h: 96 },
+      wall_art: { x: 384, y: 64, w: 64, h: 96 },
+
+      // Furniture & Props
+      desk: { x: 0, y: 160, w: 64, h: 64 },
+      chair: { x: 64, y: 160, w: 32, h: 48 },
+      chair_front: { x: 96, y: 160, w: 32, h: 48 },
+      water_cooler: { x: 128, y: 160, w: 32, h: 64 },
+      espresso_bar: { x: 160, y: 160, w: 64, h: 64 },
+      coffee_bar: { x: 160, y: 160, w: 64, h: 64 },
+      plant: { x: 224, y: 160, w: 48, h: 64 },
+      server_rack: { x: 288, y: 160, w: 48, h: 80 },
+
+      conference_table: { x: 0, y: 256, w: 96, h: 64 },
+      conference_chair: { x: 96, y: 256, w: 32, h: 48 },
+      lounge_sofa: { x: 128, y: 256, w: 64, h: 64 },
+      coffee_table: { x: 192, y: 256, w: 48, h: 32 },
+      cursor_hand: { x: 240, y: 256, w: 24, h: 24 },
+      drop_dust: { x: 264, y: 256, w: 32, h: 32 },
     },
   },
   characters: {
     frameWidth: 32,
     frameHeight: 48,
     variants: {
+      default: '/assets/characters/character_pi.png',
       pi: '/assets/characters/character_pi.png',
       claude: '/assets/characters/character_claude.png',
       codex: '/assets/characters/character_codex.png',
       gemini: '/assets/characters/character_gemini.png',
-      default: '/assets/characters/character_pi.png',
     },
     animations: {
-      idle_down: { row: 0, frames: [0, 1, 2, 3], frameRate: 3 },
-      idle_up: { row: 1, frames: [0, 1, 2, 3], frameRate: 3 },
-      sitting: { row: 1, frames: [0, 1, 2, 3], frameRate: 3 },
-      walk_down: { row: 2, frames: [0, 1, 2, 3], frameRate: 6 },
-      walk_up: { row: 3, frames: [0, 1, 2, 3], frameRate: 6 },
-      walk_side: { row: 4, frames: [0, 1, 2, 3], frameRate: 6 },
-      walk_left: { row: 4, frames: [0, 1, 2, 3], frameRate: 6 },
-      walk_right: { row: 4, frames: [0, 1, 2, 3], frameRate: 6 },
-      type_up: { row: 5, frames: [0, 1, 2, 3], frameRate: 8 },
-      typing: { row: 5, frames: [0, 1, 2, 3], frameRate: 8 },
-      working: { row: 5, frames: [0, 1, 2, 3], frameRate: 8 },
-      thinking: { row: 6, frames: [0, 1, 2, 3], frameRate: 4 },
-      reading: { row: 6, frames: [0, 1, 2, 3], frameRate: 4 },
-      alert: { row: 6, frames: [0, 1, 2, 3], frameRate: 4 },
-      done: { row: 7, frames: [0, 1, 2, 3], frameRate: 4 },
+      idle_se: { row: 0, frames: [0, 1, 2, 3], frameRate: 3 },
+      idle_ne: { row: 1, frames: [0, 1, 2, 3], frameRate: 3 },
+      walk_se: { row: 2, frames: [0, 1, 2, 3], frameRate: 6 },
+      walk_ne: { row: 3, frames: [0, 1, 2, 3], frameRate: 6 },
+      walk_sw: { row: 4, frames: [0, 1, 2, 3], frameRate: 6 },
+      type: { row: 5, frames: [0, 1, 2, 3], frameRate: 8 },
+      think: { row: 6, frames: [0, 1, 2, 3], frameRate: 4 },
       celebrate: { row: 7, frames: [0, 1, 2, 3], frameRate: 4 },
+      dragged: { row: 8, frames: [0, 1, 2, 3], frameRate: 4 },
     },
   },
 };
 
-fs.writeFileSync(
-  path.join(clientAssets, 'manifest.json'),
-  JSON.stringify(manifest, null, 2)
-);
-console.log('Saved pixel art asset manifest:', path.join(clientAssets, 'manifest.json'));
+fs.writeFileSync(path.join(clientAssets, 'manifest.json'), JSON.stringify(manifest, null, 2));
+console.log('Saved 2.5D pixel art asset manifest:', path.join(clientAssets, 'manifest.json'));

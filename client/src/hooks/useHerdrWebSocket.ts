@@ -106,11 +106,39 @@ export function useHerdrWebSocket(url = 'ws://localhost:4000'): UseHerdrWebSocke
           try {
             const data: ServerMessage = JSON.parse(event.data);
             if (data.type === 'initial_state') {
-              setAgents(data.agents);
+              setAgents((prev) => {
+                if (
+                  prev.length === data.agents.length &&
+                  prev.every(
+                    (a, i) =>
+                      a.paneId === data.agents[i].paneId &&
+                      a.status === data.agents[i].status &&
+                      a.currentTask === data.agents[i].currentTask &&
+                      a.currentPrompt === data.agents[i].currentPrompt &&
+                      a.terminalTitle === data.agents[i].terminalTitle &&
+                      a.focused === data.agents[i].focused
+                  )
+                ) {
+                  return prev;
+                }
+                return data.agents;
+              });
             } else if (data.type === 'agent_updated') {
               setAgents((prev) => {
                 const idx = prev.findIndex((a) => a.paneId === data.agent.paneId);
                 if (idx >= 0) {
+                  const existing = prev[idx];
+                  if (
+                    existing.status === data.agent.status &&
+                    existing.currentTask === data.agent.currentTask &&
+                    existing.currentPrompt === data.agent.currentPrompt &&
+                    existing.terminalTitle === data.agent.terminalTitle &&
+                    existing.focused === data.agent.focused &&
+                    existing.name === data.agent.name &&
+                    existing.cwd === data.agent.cwd
+                  ) {
+                    return prev;
+                  }
                   const copy = [...prev];
                   copy[idx] = data.agent;
                   return copy;
@@ -118,10 +146,13 @@ export function useHerdrWebSocket(url = 'ws://localhost:4000'): UseHerdrWebSocke
                 return [...prev, data.agent];
               });
             } else if (data.type === 'agent_removed') {
-              setAgents((prev) => prev.filter((a) => a.paneId !== data.paneId));
+              setAgents((prev) => {
+                if (!prev.some((a) => a.paneId === data.paneId)) return prev;
+                return prev.filter((a) => a.paneId !== data.paneId);
+              });
             } else if (data.type === 'herdr_status') {
-              setHerdrConnected(data.connected);
-              if (data.error) setError(data.error);
+              setHerdrConnected((prev) => (prev === data.connected ? prev : data.connected));
+              setError((prev) => (prev === (data.error ?? null) ? prev : (data.error ?? null)));
             } else if (data.type === 'agent_prompt_result') {
               setPromptResult({
                 paneId: data.paneId,
@@ -136,10 +167,13 @@ export function useHerdrWebSocket(url = 'ws://localhost:4000'): UseHerdrWebSocke
                 error: data.error,
               });
             } else if (data.type === 'agent_output') {
-              setAgentOutputs((prev) => ({
-                ...prev,
-                [data.paneId]: data.output,
-              }));
+              setAgentOutputs((prev) => {
+                if (prev[data.paneId] === data.output) return prev;
+                return {
+                  ...prev,
+                  [data.paneId]: data.output,
+                };
+              });
             } else if (data.type === 'agent_message' || data.type === 'agent_message_delivered') {
               setRecentMessages((prev) => [data.event, ...prev.slice(0, 49)]);
             } else if (data.type === 'workspace_sync_report' || data.type === 'sync_report') {

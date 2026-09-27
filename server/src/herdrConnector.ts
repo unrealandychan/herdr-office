@@ -119,16 +119,43 @@ export function extractTerminalDetails(text: string): {
   return { lastOutputSummary, currentTask, blockedReason };
 }
 
-function extractSessionInfo(sessionPath: string): { prompt?: string; task?: string } {
+export function readChunk(
+  filePath: string,
+  options: { offset?: number; length?: number } = {}
+): string {
+  const stat = fs.statSync(filePath);
+  if (stat.size === 0) return '';
+  const length = Math.min(stat.size, options.length ?? 64 * 1024);
+  const position =
+    options.offset !== undefined
+      ? Math.max(0, Math.min(options.offset, stat.size - length))
+      : Math.max(0, stat.size - length);
+
+  const buffer = Buffer.alloc(length);
+  const fd = fs.openSync(filePath, 'r');
+  try {
+    fs.readSync(fd, buffer, 0, length, position);
+    return buffer.toString('utf8');
+  } finally {
+    fs.closeSync(fd);
+  }
+}
+
+export function extractSessionInfo(sessionPath: string): { prompt?: string; task?: string } {
   try {
     if (!fs.existsSync(sessionPath)) return {};
-    const content = fs.readFileSync(sessionPath, 'utf8');
-    const lines = content.trim().split('\n');
+    const stat = fs.statSync(sessionPath);
+    if (stat.size === 0) return {};
+
     let prompt: string | undefined;
     let task: string | undefined;
 
-    for (let i = lines.length - 1; i >= 0; i--) {
-      const line = lines[i];
+    // 1. Zero-copy tail reading: read only the tail 64KB chunk instead of the whole file
+    const tailChunk = readChunk(sessionPath, { length: 64 * 1024 });
+    const tailLines = tailChunk.split('\n');
+
+    for (let i = tailLines.length - 1; i >= 0; i--) {
+      const line = tailLines[i].trim();
       if (!line) continue;
       try {
         const parsed = JSON.parse(line);
@@ -169,10 +196,38 @@ function extractSessionInfo(sessionPath: string): { prompt?: string; task?: stri
           }
         }
       } catch {
-        // Ignore JSON parse errors for incomplete lines
+        // Ignore incomplete line parse errors
       }
       if (prompt && task) break;
     }
+
+    // 2. If prompt wasn't in tail chunk and file was larger than 64KB, read initial 32KB
+    if (!prompt && stat.size > 64 * 1024) {
+      const headChunk = readChunk(sessionPath, { offset: 0, length: 32 * 1024 });
+      const headLines = headChunk.split('\n');
+      for (const line of headLines) {
+        if (!line.trim()) continue;
+        try {
+          const parsed = JSON.parse(line.trim());
+          if (parsed.type === 'message' && parsed.message?.role === 'user') {
+            const c = parsed.message.content;
+            if (Array.isArray(c)) {
+              const textObj = c.find((item: { type: string; text?: string }) => item.type === 'text');
+              if (textObj && textObj.text) {
+                prompt = textObj.text;
+                break;
+              }
+            } else if (typeof c === 'string') {
+              prompt = c;
+              break;
+            }
+          }
+        } catch {
+          // Ignore
+        }
+      }
+    }
+
     return { prompt, task };
   } catch {
     return {};
@@ -201,8 +256,17 @@ export interface HerdrCliAgentResponse {
   };
 }
 
+export interface HerdrConnectorOptions {
+  pollIntervalMs?: number;
+  activePollIntervalMs?: number;
+  idlePollIntervalMs?: number;
+}
+
 export class HerdrConnector extends EventEmitter {
-  private pollIntervalMs: number;
+  private activePollIntervalMs: number;
+  private idlePollIntervalMs: number;
+  private clientCount = 0;
+  private inFlightPoll: Promise<HerdrAgent[]> | null = null;
   private timer: NodeJS.Timeout | null = null;
   private running = false;
   private agents = new Map<string, HerdrAgent>();
@@ -213,9 +277,44 @@ export class HerdrConnector extends EventEmitter {
   private meetingActive = false;
   private lastSyncReport: WorkspaceSyncReport | null = null;
 
-  constructor(options: { pollIntervalMs?: number } = {}) {
+  constructor(options: HerdrConnectorOptions = {}) {
     super();
-    this.pollIntervalMs = options.pollIntervalMs ?? 500;
+    this.activePollIntervalMs =
+      options.activePollIntervalMs ??
+      options.pollIntervalMs ??
+      (Number(process.env.HERDR_POLL_INTERVAL_MS) || 1500);
+    this.idlePollIntervalMs =
+      options.idlePollIntervalMs ??
+      (Number(process.env.HERDR_IDLE_POLL_INTERVAL_MS) || 10000);
+  }
+
+  public getActivePollInterval(): number {
+    return this.activePollIntervalMs;
+  }
+
+  public getIdlePollInterval(): number {
+    return this.idlePollIntervalMs;
+  }
+
+  public getClientCount(): number {
+    return this.clientCount;
+  }
+
+  public setClientCount(count: number): void {
+    const prev = this.clientCount;
+    this.clientCount = Math.max(0, count);
+    if (prev === 0 && this.clientCount > 0 && this.running) {
+      // Woke up from idle: schedule immediate poll if currently waiting
+      if (this.timer) {
+        clearTimeout(this.timer);
+        this.timer = null;
+      }
+      this.poll();
+    }
+  }
+
+  public getEffectivePollInterval(): number {
+    return this.clientCount > 0 ? this.activePollIntervalMs : this.idlePollIntervalMs;
   }
 
   public getAgents(): HerdrAgent[] {
@@ -241,6 +340,18 @@ export class HerdrConnector extends EventEmitter {
   }
 
   public async pollOnce(): Promise<HerdrAgent[]> {
+    if (this.inFlightPoll) {
+      return this.inFlightPoll;
+    }
+    this.inFlightPoll = this.executePoll();
+    try {
+      return await this.inFlightPoll;
+    } finally {
+      this.inFlightPoll = null;
+    }
+  }
+
+  private async executePoll(): Promise<HerdrAgent[]> {
     try {
       const { stdout } = await execFileAsync('herdr', ['agent', 'list'], {
         timeout: 2000,
@@ -289,7 +400,7 @@ export class HerdrConnector extends EventEmitter {
         // Fallback for currentTask from terminal output if missing or working
         if (!currentTask && (status === 'working' || status === 'blocked')) {
           const cachedTerm = this.terminalCache.get(raw.pane_id);
-          if (cachedTerm && now - cachedTerm.time < 3000) {
+          if (cachedTerm && now - cachedTerm.time < 8000) {
             const details = extractTerminalDetails(cachedTerm.output);
             currentTask = details.currentTask || details.lastOutputSummary;
           } else {
@@ -344,13 +455,23 @@ export class HerdrConnector extends EventEmitter {
         }
       }
 
-      // Check for removed agents
-      for (const [paneId] of this.agents) {
+      // Check for removed agents & evict stale caches
+      for (const [paneId, existingAgent] of this.agents) {
         if (!currentPaneIds.has(paneId)) {
           this.agents.delete(paneId);
           this.terminalCache.delete(paneId);
+          if (existingAgent.sessionPath) {
+            this.sessionCache.delete(existingAgent.sessionPath);
+          }
           this.emit('agent_removed', paneId);
         }
+      }
+
+      // Prevent unbounded growth of session cache if many sessions were opened
+      if (this.sessionCache.size > 50) {
+        const excess = this.sessionCache.size - 50;
+        const keys = Array.from(this.sessionCache.keys()).slice(0, excess);
+        for (const k of keys) this.sessionCache.delete(k);
       }
 
       if (!this.isConnected) {
@@ -657,9 +778,14 @@ export class HerdrConnector extends EventEmitter {
 
   private poll = async (): Promise<void> => {
     if (!this.running) return;
-    await this.pollOnce();
+    try {
+      await this.pollOnce();
+    } catch {
+      // Handled in executePoll
+    }
     if (this.running) {
-      this.timer = setTimeout(this.poll, this.pollIntervalMs);
+      const interval = this.getEffectivePollInterval();
+      this.timer = setTimeout(this.poll, interval);
     }
   };
 

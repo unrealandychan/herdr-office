@@ -2,9 +2,12 @@ import type { LoadedAssets } from './assetLoader';
 import {
   createOfficeMap,
   DESK_STATIONS,
-  GUILD_POIS,
+  OFFICE_POIS,
   OFFICE_COLS,
   OFFICE_ROWS,
+  gridToIso,
+  isoToGrid,
+  getStationForIndex,
   type DeskStation,
 } from './officeLayout';
 import type { HerdrAgent } from '../types';
@@ -26,36 +29,46 @@ export interface ActiveConversation {
   replyText?: string;
   stage: 'walking_to' | 'speaking_from' | 'speaking_reply' | 'returning';
   stageTimer: number;
-  meetX: number;
-  meetY: number;
+  meetCol: number;
+  meetRow: number;
 }
 
 export interface AgentEntity {
   agent: HerdrAgent;
   station: DeskStation;
-  x: number;
-  y: number;
-  targetX: number;
-  targetY: number;
-  homeX: number;
-  homeY: number;
-  direction: 'down' | 'up' | 'side';
-  facingLeft: boolean;
-  state: 'sitting' | 'walking' | 'talking' | 'visiting_poi';
-  walkSpeed: number;
+  col: number;
+  row: number;
+  targetCol: number;
+  targetRow: number;
+  homeCol: number;
+  homeRow: number;
+  screenX: number;
+  screenY: number;
+  direction: 'se' | 'sw' | 'ne';
+  state: 'sitting' | 'walking' | 'talking' | 'visiting_poi' | 'dragged';
+  walkSpeed: number; // grid units per sec
   bubbleText?: string;
   bubbleSpeaker?: string;
   bubbleDuration: number;
+  dropDustTimer?: number;
   nextAutonomousActionTime: number;
+  assignedPoiSlot?: { poiId: string; col: number; row: number };
 }
 
-const CONF_SEATS = [
-  { x: 14.5 * 32, y: 7.2 * 32, dir: 'down' as const },
-  { x: 16.0 * 32, y: 7.2 * 32, dir: 'down' as const },
-  { x: 17.2 * 32, y: 7.2 * 32, dir: 'down' as const },
-  { x: 14.5 * 32, y: 9.8 * 32, dir: 'up' as const },
-  { x: 16.0 * 32, y: 9.8 * 32, dir: 'up' as const },
-  { x: 17.2 * 32, y: 9.8 * 32, dir: 'up' as const },
+// 12 Distinct Seats around the Executive Conference Suite
+const CONF_MEETING_SEATS = [
+  { col: 12.2, row: 7.8, dir: 'se' as const },
+  { col: 13.0, row: 7.8, dir: 'se' as const },
+  { col: 13.8, row: 7.8, dir: 'se' as const },
+  { col: 12.2, row: 10.2, dir: 'ne' as const },
+  { col: 13.0, row: 10.2, dir: 'ne' as const },
+  { col: 13.8, row: 10.2, dir: 'ne' as const },
+  { col: 11.4, row: 9.0, dir: 'se' as const },
+  { col: 14.6, row: 9.0, dir: 'sw' as const },
+  { col: 11.2, row: 7.8, dir: 'se' as const },
+  { col: 14.8, row: 10.2, dir: 'ne' as const },
+  { col: 12.0, row: 11.0, dir: 'ne' as const },
+  { col: 14.0, row: 11.0, dir: 'ne' as const },
 ];
 
 export class OfficeCanvasEngine {
@@ -76,19 +89,33 @@ export class OfficeCanvasEngine {
   private activeConversation: ActiveConversation | null = null;
   private meetingActive = false;
 
+  // Virtual Canvas Dimensions & Origin
+  private baseWidth = 1120;
+  private baseHeight = 640;
+  private originX = 560;
+  private originY = 96;
+
+  // Drag and Drop state
+  private isDragging = false;
+  private draggedPaneId: string | null = null;
+  private dragStartMouse = { x: 0, y: 0 };
+  private hasDragged = false;
+  private hoveredTile: { col: number; row: number } | null = null;
+
   constructor(options: CanvasEngineOptions) {
     this.canvas = options.canvas;
     const ctx = this.canvas.getContext('2d');
     if (!ctx) throw new Error('Failed to get 2D canvas context');
     this.ctx = ctx;
     this.assets = options.assets;
-    this.scale = options.scale ?? 2;
+    this.scale = options.scale ?? 1.25;
     this.onSelectAgent = options.onSelectAgent;
     this.onAgentSpoke = options.onAgentSpoke;
 
     this.resizeCanvas();
-    this.canvas.addEventListener('click', this.handleClick);
+    this.canvas.addEventListener('mousedown', this.handleMouseDown);
     this.canvas.addEventListener('mousemove', this.handleMouseMove);
+    this.canvas.addEventListener('mouseup', this.handleMouseUp);
     this.canvas.addEventListener('mouseleave', this.handleMouseLeave);
   }
 
@@ -108,7 +135,7 @@ export class OfficeCanvasEngine {
 
   /**
    * Real message exchange between agents.
-   * Causes fromAgent to walk over to toAgent, display the actual message, and return.
+   * fromAgent walks over to toAgent, displays message, and returns to desk.
    */
   public sendAgentMessage(fromPaneId: string, toPaneId: string, customText?: string) {
     const fromEntity = this.entities.get(fromPaneId);
@@ -118,9 +145,9 @@ export class OfficeCanvasEngine {
     const fromText = customText || 'Coordinating workspace synchronization.';
     const replyText = `Acknowledged. Received from @${fromEntity.agent.name || fromEntity.agent.agent}`;
 
-    // Meet near recipient's desk
-    const meetX = toEntity.homeX - 28;
-    const meetY = toEntity.homeY;
+    // Meet beside recipient's desk with clear spacing
+    const meetCol = toEntity.homeCol + 0.8;
+    const meetRow = toEntity.homeRow - 0.2;
 
     this.activeConversation = {
       fromPaneId,
@@ -131,19 +158,19 @@ export class OfficeCanvasEngine {
       replyText,
       stage: 'walking_to',
       stageTimer: 0,
-      meetX,
-      meetY,
+      meetCol,
+      meetRow,
     };
 
-    fromEntity.targetX = meetX;
-    fromEntity.targetY = meetY;
+    fromEntity.targetCol = meetCol;
+    fromEntity.targetRow = meetRow;
     fromEntity.state = 'walking';
 
     this.onAgentSpoke?.(fromEntity.agent.name || fromEntity.agent.agent, toEntity.agent.name || toEntity.agent.agent, fromText);
   }
 
   /**
-   * Put office into Standup Meeting mode: agents assemble at conference table.
+   * Put office into Standup Meeting mode: agents assemble at conference table in unique chairs.
    */
   public setMeetingActive(active: boolean) {
     this.meetingActive = active;
@@ -151,15 +178,15 @@ export class OfficeCanvasEngine {
 
     if (active) {
       entityList.forEach((entity, index) => {
-        const seat = CONF_SEATS[index % CONF_SEATS.length];
-        entity.targetX = seat.x;
-        entity.targetY = seat.y;
+        const seat = CONF_MEETING_SEATS[index % CONF_MEETING_SEATS.length];
+        entity.targetCol = seat.col;
+        entity.targetRow = seat.row;
         entity.state = 'walking';
       });
     } else {
       entityList.forEach((entity) => {
-        entity.targetX = entity.homeX;
-        entity.targetY = entity.homeY;
+        entity.targetCol = entity.homeCol;
+        entity.targetRow = entity.homeRow;
         entity.state = 'walking';
       });
     }
@@ -187,20 +214,19 @@ export class OfficeCanvasEngine {
 
   public destroy() {
     this.stop();
-    this.canvas.removeEventListener('click', this.handleClick);
+    this.canvas.removeEventListener('mousedown', this.handleMouseDown);
     this.canvas.removeEventListener('mousemove', this.handleMouseMove);
+    this.canvas.removeEventListener('mouseup', this.handleMouseUp);
     this.canvas.removeEventListener('mouseleave', this.handleMouseLeave);
   }
 
   private resizeCanvas() {
-    const tileSize = this.assets.manifest.tileSize;
-    this.canvas.width = OFFICE_COLS * tileSize * this.scale;
-    this.canvas.height = OFFICE_ROWS * tileSize * this.scale;
+    this.canvas.width = Math.round(this.baseWidth * this.scale);
+    this.canvas.height = Math.round(this.baseHeight * this.scale);
     this.ctx.imageSmoothingEnabled = false;
   }
 
   private syncEntities() {
-    const tileSize = this.assets.manifest.tileSize;
     const currentPaneIds = new Set(this.agents.map((a) => a.paneId));
 
     // Remove defunct entities
@@ -210,27 +236,30 @@ export class OfficeCanvasEngine {
       }
     }
 
-    // Add or update entities
+    // Add or update entities with guaranteed unique desk stations
     this.agents.forEach((agent, i) => {
-      const station = DESK_STATIONS[i % DESK_STATIONS.length];
-      const homeX = station.deskCol * tileSize + 16;
-      const homeY = station.deskRow * tileSize - 14;
+      const station = getStationForIndex(i);
+      // Place sitting position at the desk
+      const homeCol = station.deskCol;
+      const homeRow = station.deskRow;
+      const screen = gridToIso(homeCol, homeRow, this.originX, this.originY);
 
       let entity = this.entities.get(agent.paneId);
       if (!entity) {
         entity = {
           agent,
           station,
-          x: homeX,
-          y: homeY,
-          targetX: homeX,
-          targetY: homeY,
-          homeX,
-          homeY,
-          direction: 'up',
-          facingLeft: false,
+          col: homeCol,
+          row: homeRow,
+          targetCol: homeCol,
+          targetRow: homeRow,
+          homeCol,
+          homeRow,
+          screenX: screen.x,
+          screenY: screen.y,
+          direction: 'se', // Facing forward into the room towards player
           state: 'sitting',
-          walkSpeed: 64, // pixels/sec
+          walkSpeed: 2.6, // grid units per sec
           bubbleDuration: 0,
           nextAutonomousActionTime: Date.now() + 6000 + Math.random() * 8000,
         };
@@ -238,8 +267,14 @@ export class OfficeCanvasEngine {
       } else {
         entity.agent = agent;
         entity.station = station;
-        entity.homeX = homeX;
-        entity.homeY = homeY;
+        entity.homeCol = homeCol;
+        entity.homeRow = homeRow;
+        if (entity.state === 'sitting') {
+          entity.col = homeCol;
+          entity.row = homeRow;
+          entity.screenX = screen.x;
+          entity.screenY = screen.y;
+        }
       }
     });
   }
@@ -258,67 +293,136 @@ export class OfficeCanvasEngine {
         }
       }
 
+      // Manage drop dust timer
+      if (entity.dropDustTimer && entity.dropDustTimer > 0) {
+        entity.dropDustTimer -= dt;
+        if (entity.dropDustTimer <= 0) {
+          entity.dropDustTimer = undefined;
+        }
+      }
+
       // Movement step
       if (entity.state === 'walking') {
-        const dx = entity.targetX - entity.x;
-        const dy = entity.targetY - entity.y;
-        const dist = Math.hypot(dx, dy);
+        const dCol = entity.targetCol - entity.col;
+        const dRow = entity.targetRow - entity.row;
+        const dist = Math.hypot(dCol, dRow);
 
-        if (dist <= entity.walkSpeed * dt || dist < 2) {
-          entity.x = entity.targetX;
-          entity.y = entity.targetY;
+        if (dist <= entity.walkSpeed * dt || dist < 0.08) {
+          entity.col = entity.targetCol;
+          entity.row = entity.targetRow;
 
           // Arrived at destination
-          if (entity.x === entity.homeX && entity.y === entity.homeY) {
+          if (
+            Math.abs(entity.col - entity.homeCol) < 0.1 &&
+            Math.abs(entity.row - entity.homeRow) < 0.1
+          ) {
             entity.state = 'sitting';
-            entity.direction = 'up';
+            entity.direction = 'se'; // Face forward
+            entity.assignedPoiSlot = undefined;
           } else {
             entity.state = 'talking';
           }
         } else {
-          entity.x += (dx / dist) * entity.walkSpeed * dt;
-          entity.y += (dy / dist) * entity.walkSpeed * dt;
+          entity.col += (dCol / dist) * entity.walkSpeed * dt;
+          entity.row += (dRow / dist) * entity.walkSpeed * dt;
 
-          if (Math.abs(dx) > Math.abs(dy)) {
-            entity.direction = 'side';
-            entity.facingLeft = dx < 0;
+          // Compute isometric direction
+          if (Math.abs(dCol) > Math.abs(dRow)) {
+            entity.direction = dCol > 0 ? 'se' : 'sw';
           } else {
-            entity.direction = dy > 0 ? 'down' : 'up';
+            entity.direction = dRow > 0 ? 'sw' : 'ne';
           }
         }
       }
 
-      // Autonomous occasional coffee/water break (ONLY when idle and not in a meeting)
+      // Update screen coordinates
+      const screen = gridToIso(entity.col, entity.row, this.originX, this.originY);
+      entity.screenX = screen.x;
+      entity.screenY = screen.y;
+
+      // Autonomous occasional coffee/water break (ONLY when idle and not in a meeting or dragging)
       if (
         !this.meetingActive &&
         entity.agent.status === 'idle' &&
         entity.state === 'sitting' &&
         !this.activeConversation &&
+        !this.isDragging &&
         now >= entity.nextAutonomousActionTime
       ) {
-        entity.nextAutonomousActionTime = now + 25000 + Math.random() * 30000;
+        entity.nextAutonomousActionTime = now + 24000 + Math.random() * 26000;
 
-        // 30% chance for an idle agent to grab water or espresso
-        if (Math.random() < 0.3) {
-          const breakPOIs = GUILD_POIS.filter((p) => p.id === 'water_cooler' || p.id === 'coffee');
-          const poi = breakPOIs[Math.floor(Math.random() * breakPOIs.length)] || GUILD_POIS[0];
-          entity.targetX = poi.col * 32;
-          entity.targetY = poi.row * 32;
+        // 35% chance for an idle agent to take a break
+        if (Math.random() < 0.35) {
+          const breakPOIs = OFFICE_POIS.filter(
+            (p) => p.id === 'coffee' || p.id === 'water_cooler' || p.id === 'lounge' || p.id === 'whiteboard'
+          );
+          const poi = breakPOIs[Math.floor(Math.random() * breakPOIs.length)];
+
+          // Pick an unoccupied slot at this POI to avoid overlapping!
+          const occupiedSlots = new Set<string>();
+          for (const [, other] of this.entities) {
+            if (other.assignedPoiSlot) {
+              occupiedSlots.add(`${other.assignedPoiSlot.col.toFixed(1)},${other.assignedPoiSlot.row.toFixed(1)}`);
+            }
+          }
+
+          const freeSlot = poi.slots.find(
+            (s) => !occupiedSlots.has(`${s.col.toFixed(1)},${s.row.toFixed(1)}`)
+          ) || poi.slots[0];
+
+          entity.assignedPoiSlot = { poiId: poi.id, col: freeSlot.col, row: freeSlot.row };
+          entity.targetCol = freeSlot.col;
+          entity.targetRow = freeSlot.row;
           entity.state = 'walking';
 
-          // Set return timer after short break
+          // Return timer after break
           setTimeout(() => {
-            if (entity.state !== 'walking' || entity.targetX !== entity.homeX) {
-              entity.targetX = entity.homeX;
-              entity.targetY = entity.homeY;
+            if (entity.state !== 'dragged') {
+              entity.targetCol = entity.homeCol;
+              entity.targetRow = entity.homeRow;
               entity.state = 'walking';
             }
-          }, 4000);
+          }, 4500);
         }
       }
     }
 
-    // 2. Update Active Inter-Agent Conversation
+    // 2. Anti-Overlap Continuous Separation Force
+    // Mathematically guarantees agents never clip or superimpose into a single blob!
+    const entityList = Array.from(this.entities.values());
+    for (let i = 0; i < entityList.length; i++) {
+      for (let j = i + 1; j < entityList.length; j++) {
+        const a = entityList[i];
+        const b = entityList[j];
+
+        // Do not push agents sitting at their assigned desks or currently dragged
+        if (a.state === 'dragged' || b.state === 'dragged') continue;
+        if (a.state === 'sitting' && b.state === 'sitting') continue;
+
+        const dCol = b.col - a.col;
+        const dRow = b.row - a.row;
+        const dist = Math.hypot(dCol, dRow);
+        const MIN_DIST = 0.85; // 0.85 grid units personal radius
+
+        if (dist < MIN_DIST && dist > 0.0001) {
+          const overlap = (MIN_DIST - dist) / 2;
+          const push = overlap * Math.min(dt * 7, 1);
+          const nx = (dCol / dist) * push;
+          const ny = (dRow / dist) * push;
+
+          if (a.state !== 'sitting') {
+            a.col -= nx;
+            a.row -= ny;
+          }
+          if (b.state !== 'sitting') {
+            b.col += nx;
+            b.row += ny;
+          }
+        }
+      }
+    }
+
+    // 3. Update Active Inter-Agent Conversation
     if (this.activeConversation) {
       const conv = this.activeConversation;
       const fromEntity = this.entities.get(conv.fromPaneId);
@@ -333,13 +437,10 @@ export class OfficeCanvasEngine {
 
       if (conv.stage === 'walking_to') {
         if (fromEntity.state !== 'walking') {
-          // Arrived to talk
           conv.stage = 'speaking_from';
           conv.stageTimer = 0;
-          fromEntity.direction = 'side';
-          fromEntity.facingLeft = false;
-          toEntity.direction = 'side';
-          toEntity.facingLeft = true;
+          fromEntity.direction = 'se';
+          toEntity.direction = 'sw';
 
           fromEntity.bubbleText = conv.fromText;
           fromEntity.bubbleSpeaker = conv.fromName;
@@ -358,10 +459,10 @@ export class OfficeCanvasEngine {
         if (conv.stageTimer >= 3.8) {
           conv.stage = 'returning';
           toEntity.bubbleText = undefined;
-          toEntity.direction = 'up';
+          toEntity.direction = 'se';
 
-          fromEntity.targetX = fromEntity.homeX;
-          fromEntity.targetY = fromEntity.homeY;
+          fromEntity.targetCol = fromEntity.homeCol;
+          fromEntity.targetRow = fromEntity.homeRow;
           fromEntity.state = 'walking';
         }
       } else if (conv.stage === 'returning') {
@@ -372,49 +473,156 @@ export class OfficeCanvasEngine {
     }
   }
 
-  private handleClick = (event: MouseEvent) => {
-    const hit = this.getStationUnderMouse(event.clientX, event.clientY);
-    if (hit) {
-      this.selectedPaneId = hit.agent.paneId;
-      this.onSelectAgent?.(hit.agent);
-    } else {
-      this.selectedPaneId = null;
-      this.onSelectAgent?.(null);
-    }
-  };
-
-  private handleMouseMove = (event: MouseEvent) => {
-    const hit = this.getStationUnderMouse(event.clientX, event.clientY);
-    this.hoveredPaneId = hit ? hit.agent.paneId : null;
-  };
-
-  private handleMouseLeave = () => {
-    this.hoveredPaneId = null;
-  };
-
-  private getStationUnderMouse(clientX: number, clientY: number): { agent: HerdrAgent; entity: AgentEntity } | null {
-    const rect = this.canvas.getBoundingClientRect();
-    const x = (clientX - rect.left) / this.scale;
-    const y = (clientY - rect.top) / this.scale;
-    const tileSize = this.assets.manifest.tileSize;
-
+  // ====================================================
+  // MOUSE INTERACTIONS: DRAG & DROP + SELECTION
+  // ====================================================
+  private getAgentUnderMouse(mx: number, my: number): { agent: HerdrAgent; entity: AgentEntity } | null {
     for (const [, entity] of this.entities) {
-      const deskX = entity.station.deskCol * tileSize;
-      const deskY = entity.station.deskRow * tileSize;
-      // Hit area spans workstation desk and current entity position
-      if (
-        (x >= deskX - 4 && x <= deskX + 68 && y >= deskY - 30 && y <= deskY + 54) ||
-        (x >= entity.x - 16 && x <= entity.x + 32 && y >= entity.y - 10 && y <= entity.y + 48)
-      ) {
+      const dx = mx - entity.screenX;
+      const dy = my - (entity.screenY - 24);
+      if (Math.hypot(dx, dy) <= 28) {
         return { agent: entity.agent, entity };
       }
     }
     return null;
   }
 
+  private handleMouseDown = (e: MouseEvent) => {
+    const rect = this.canvas.getBoundingClientRect();
+    const mx = (e.clientX - rect.left) / this.scale;
+    const my = (e.clientY - rect.top) / this.scale;
+
+    const hit = this.getAgentUnderMouse(mx, my);
+    if (hit) {
+      this.isDragging = true;
+      this.draggedPaneId = hit.agent.paneId;
+      this.dragStartMouse = { x: mx, y: my };
+      this.hasDragged = false;
+
+      // Cancel any ongoing walk and switch to dragged floating pose
+      hit.entity.state = 'dragged';
+      hit.entity.assignedPoiSlot = undefined;
+      this.canvas.style.cursor = 'grabbing';
+    }
+  };
+
+  private handleMouseMove = (e: MouseEvent) => {
+    const rect = this.canvas.getBoundingClientRect();
+    const mx = (e.clientX - rect.left) / this.scale;
+    const my = (e.clientY - rect.top) / this.scale;
+
+    // Track hovered floor tile in simulation game coordinates
+    const gridPos = isoToGrid(mx, my, this.originX, this.originY);
+    if (
+      gridPos.col >= 1 &&
+      gridPos.col < OFFICE_COLS &&
+      gridPos.row >= 1 &&
+      gridPos.row < OFFICE_ROWS
+    ) {
+      this.hoveredTile = { col: Math.floor(gridPos.col), row: Math.floor(gridPos.row) };
+    } else {
+      this.hoveredTile = null;
+    }
+
+    if (this.isDragging && this.draggedPaneId) {
+      const entity = this.entities.get(this.draggedPaneId);
+      if (!entity) return;
+
+      const dist = Math.hypot(mx - this.dragStartMouse.x, my - this.dragStartMouse.y);
+      if (dist > 4) {
+        this.hasDragged = true;
+      }
+
+      // Convert dragged mouse position to office floor coordinates
+      const targetGrid = isoToGrid(mx, my + 14, this.originX, this.originY);
+      // Clamp within playable office bounds
+      entity.col = Math.max(1.2, Math.min(OFFICE_COLS - 1.8, targetGrid.col));
+      entity.row = Math.max(1.2, Math.min(OFFICE_ROWS - 1.8, targetGrid.row));
+
+      const screen = gridToIso(entity.col, entity.row, this.originX, this.originY);
+      entity.screenX = screen.x;
+      entity.screenY = screen.y;
+
+      this.canvas.style.cursor = 'grabbing';
+    } else {
+      // Hover feedback
+      const hit = this.getAgentUnderMouse(mx, my);
+      if (hit) {
+        this.hoveredPaneId = hit.agent.paneId;
+        this.canvas.style.cursor = 'grab';
+      } else {
+        this.hoveredPaneId = null;
+        this.canvas.style.cursor = 'default';
+      }
+    }
+  };
+
+  private handleMouseUp = (e: MouseEvent) => {
+    if (this.isDragging && this.draggedPaneId) {
+      const entity = this.entities.get(this.draggedPaneId);
+
+      if (entity) {
+        if (this.hasDragged) {
+          // Agent was dragged and dropped!
+          entity.dropDustTimer = 0.9;
+          entity.bubbleText = 'Whoa! Heading back to my seat...';
+          entity.bubbleDuration = 2.5;
+
+          // Walk back to their assigned desk station!
+          entity.state = 'walking';
+          entity.targetCol = entity.homeCol;
+          entity.targetRow = entity.homeRow;
+        } else {
+          // It was a simple click: select agent in sidebar!
+          this.selectedPaneId = entity.agent.paneId;
+          this.onSelectAgent?.(entity.agent);
+
+          if (entity.state === 'dragged') {
+            entity.state = 'sitting';
+            entity.direction = 'se';
+          }
+        }
+      }
+
+      this.isDragging = false;
+      this.draggedPaneId = null;
+      this.hasDragged = false;
+      this.canvas.style.cursor = 'default';
+    } else {
+      // Clicked on empty space: deselect
+      const rect = this.canvas.getBoundingClientRect();
+      const mx = (e.clientX - rect.left) / this.scale;
+      const my = (e.clientY - rect.top) / this.scale;
+      const hit = this.getAgentUnderMouse(mx, my);
+      if (!hit) {
+        this.selectedPaneId = null;
+        this.onSelectAgent?.(null);
+      }
+    }
+  };
+
+  private handleMouseLeave = () => {
+    if (this.isDragging && this.draggedPaneId) {
+      const entity = this.entities.get(this.draggedPaneId);
+      if (entity) {
+        entity.state = 'walking';
+        entity.targetCol = entity.homeCol;
+        entity.targetRow = entity.homeRow;
+      }
+      this.isDragging = false;
+      this.draggedPaneId = null;
+      this.hasDragged = false;
+    }
+    this.hoveredPaneId = null;
+    this.hoveredTile = null;
+    this.canvas.style.cursor = 'default';
+  };
+
+  // ====================================================
+  // 2.5D ISOMETRIC RENDERING PIPELINE
+  // ====================================================
   private render() {
-    const { ctx, scale, map, assets } = this;
-    const tileSize = assets.manifest.tileSize;
+    const { ctx, scale, map, assets, originX, originY } = this;
     const tileset = assets.tilesetImage;
     const tiles = assets.manifest.tileset.tiles;
     const elapsed = Date.now() - this.startTime;
@@ -423,124 +631,350 @@ export class OfficeCanvasEngine {
     ctx.scale(scale, scale);
     ctx.imageSmoothingEnabled = false;
 
-    // 1. Clear background (Atmospheric Medieval Slate)
-    ctx.fillStyle = '#060810';
-    ctx.fillRect(0, 0, this.canvas.width / scale, this.canvas.height / scale);
+    // 1. Rich Modern Studio Slate Backdrop (Simulation Game aesthetic)
+    const bgGrad = ctx.createLinearGradient(0, 0, 0, this.baseHeight);
+    bgGrad.addColorStop(0, '#0c1322');
+    bgGrad.addColorStop(0.5, '#0f172a');
+    bgGrad.addColorStop(1, '#080d1a');
+    ctx.fillStyle = bgGrad;
+    ctx.fillRect(0, 0, this.baseWidth, this.baseHeight);
 
-    // 2. Render Castle Flooring (rows 1 to OFFICE_ROWS - 1)
+    // Subtle ambient floor shadow under the entire building diorama
+    const centerFloor = gridToIso(8, 7, originX, originY);
+    const dioramaGlow = ctx.createRadialGradient(centerFloor.x, centerFloor.y, 40, centerFloor.x, centerFloor.y, 460);
+    dioramaGlow.addColorStop(0, 'rgba(56, 189, 248, 0.04)');
+    dioramaGlow.addColorStop(0.7, 'rgba(15, 23, 42, 0.3)');
+    dioramaGlow.addColorStop(1, 'rgba(0, 0, 0, 0)');
+    ctx.fillStyle = dioramaGlow;
+    ctx.fillRect(0, 0, this.baseWidth, this.baseHeight);
+
+    // 2. Render Seamless 2.5D Architectural Back Walls
+    // North-West Wall (runs row 0, col 0..15 down-right)
+    const nwEnd = gridToIso(OFFICE_COLS, 0, originX, originY);
+    const wallHeight = 84;
+
+    // Solid North-West wall polygon
+    ctx.fillStyle = '#e2e8f0'; // Clean modern off-white drywall
+    ctx.beginPath();
+    ctx.moveTo(originX, originY - wallHeight);
+    ctx.lineTo(nwEnd.x, nwEnd.y - wallHeight);
+    ctx.lineTo(nwEnd.x, nwEnd.y);
+    ctx.lineTo(originX, originY);
+    ctx.closePath();
+    ctx.fill();
+
+    // North-West Wall Top Molding & Baseboard
+    ctx.strokeStyle = '#94a3b8';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(originX, originY - wallHeight);
+    ctx.lineTo(nwEnd.x, nwEnd.y - wallHeight);
+    ctx.stroke();
+
+    ctx.strokeStyle = '#78350f'; // Warm oak baseboard
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(originX, originY - 1);
+    ctx.lineTo(nwEnd.x, nwEnd.y - 1);
+    ctx.stroke();
+
+    // North-East Wall (runs col 0, row 0..13 down-left)
+    const neEnd = gridToIso(0, OFFICE_ROWS, originX, originY);
+    ctx.fillStyle = '#cbd5e1'; // Slightly shaded side drywall
+    ctx.beginPath();
+    ctx.moveTo(originX, originY - wallHeight);
+    ctx.lineTo(neEnd.x, neEnd.y - wallHeight);
+    ctx.lineTo(neEnd.x, neEnd.y);
+    ctx.lineTo(originX, originY);
+    ctx.closePath();
+    ctx.fill();
+
+    // North-East Wall Top Molding & Baseboard
+    ctx.strokeStyle = '#64748b';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(originX, originY - wallHeight);
+    ctx.lineTo(neEnd.x, neEnd.y - wallHeight);
+    ctx.stroke();
+
+    ctx.strokeStyle = '#5c2b09';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(originX, originY - 1);
+    ctx.lineTo(neEnd.x, neEnd.y - 1);
+    ctx.stroke();
+
+    // Render Wall Inset Props & Windows on NW Wall
+    for (let c = 0; c < OFFICE_COLS; c++) {
+      const cell = map[0][c];
+      const tileMeta = tiles[cell.type] || tiles.wall_top;
+      if (tileMeta && cell.type !== 'wall_top') {
+        const iso = gridToIso(c, 0, originX, originY);
+        ctx.drawImage(tileset, tileMeta.x, tileMeta.y, tileMeta.w, tileMeta.h, iso.x - 32, iso.y - 74, tileMeta.w, tileMeta.h);
+      }
+    }
+
+    // Render Wall Props on NE Wall (Bookshelves, Dashboard, Art)
     for (let r = 1; r < OFFICE_ROWS; r++) {
-      for (let c = 0; c < OFFICE_COLS; c++) {
+      const cell = map[r][0];
+      const tileMeta = tiles[cell.type] || tiles.wall_bookshelf;
+      if (tileMeta && cell.type !== 'wall_top') {
+        const iso = gridToIso(0, r, originX, originY);
+        ctx.drawImage(tileset, tileMeta.x, tileMeta.y, tileMeta.w, tileMeta.h, iso.x - 32, iso.y - 74, tileMeta.w, tileMeta.h);
+      }
+    }
+
+    // 3. Render 2.5D Isometric Floor Tiles (rows 1..13, cols 1..15)
+    for (let r = 1; r < OFFICE_ROWS; r++) {
+      for (let c = 1; c < OFFICE_COLS; c++) {
         const cell = map[r][c];
         const tileMeta = tiles[cell.type] || tiles.floor_wood;
         if (tileMeta) {
-          ctx.drawImage(
-            tileset,
-            tileMeta.x,
-            tileMeta.y,
-            tileMeta.w,
-            tileMeta.h,
-            c * tileSize,
-            r * tileSize,
-            tileMeta.w,
-            tileMeta.h
-          );
+          const iso = gridToIso(c, r, originX, originY);
+          ctx.drawImage(tileset, tileMeta.x, tileMeta.y, tileMeta.w, tileMeta.h, iso.x - 32, iso.y, tileMeta.w, tileMeta.h);
+
+          // Simulation Game: Hover Grid Highlight
+          if (this.hoveredTile && this.hoveredTile.col === c && this.hoveredTile.row === r) {
+            const hoverTile = tiles.grid_cell_hover;
+            if (hoverTile) {
+              ctx.drawImage(tileset, hoverTile.x, hoverTile.y, hoverTile.w, hoverTile.h, iso.x - 32, iso.y, hoverTile.w, hoverTile.h);
+            }
+          }
         }
       }
     }
 
-    // 3. Render Wall (row 0, height 48px: Windows, Whiteboard, Server Rack, Bookshelf)
-    for (let c = 0; c < OFFICE_COLS; c++) {
-      const cell = map[0][c];
-      const tileMeta = tiles[cell.type] || tiles.wall_top;
-      if (tileMeta) {
-        ctx.drawImage(
-          tileset,
-          tileMeta.x,
-          tileMeta.y,
-          tileMeta.w,
-          tileMeta.h,
-          c * tileSize,
-          0,
-          tileMeta.w,
-          tileMeta.h
-        );
-      }
+    // 4. Render Seamless 3D Foundation Slab (Diorama Edge)
+    const swCorner = gridToIso(0, OFFICE_ROWS, originX, originY);
+    const bottomCorner = gridToIso(OFFICE_COLS, OFFICE_ROWS, originX, originY);
+    const seCorner = gridToIso(OFFICE_COLS, 0, originX, originY);
+    const foundationDepth = 22;
+
+    // South-West Foundation Face (Viewer-Left)
+    ctx.fillStyle = '#1e293b';
+    ctx.beginPath();
+    ctx.moveTo(swCorner.x, swCorner.y);
+    ctx.lineTo(bottomCorner.x, bottomCorner.y);
+    ctx.lineTo(bottomCorner.x, bottomCorner.y + foundationDepth);
+    ctx.lineTo(swCorner.x, swCorner.y + foundationDepth);
+    ctx.closePath();
+    ctx.fill();
+
+    // Strata accent line
+    ctx.strokeStyle = '#334155';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(swCorner.x, swCorner.y + 10);
+    ctx.lineTo(bottomCorner.x, bottomCorner.y + 10);
+    ctx.stroke();
+
+    // Top bevel highlight
+    ctx.strokeStyle = '#64748b';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(swCorner.x, swCorner.y);
+    ctx.lineTo(bottomCorner.x, bottomCorner.y);
+    ctx.stroke();
+
+    // South-East Foundation Face (Viewer-Right)
+    ctx.fillStyle = '#0f172a';
+    ctx.beginPath();
+    ctx.moveTo(bottomCorner.x, bottomCorner.y);
+    ctx.lineTo(seCorner.x, seCorner.y);
+    ctx.lineTo(seCorner.x, seCorner.y + foundationDepth);
+    ctx.lineTo(bottomCorner.x, bottomCorner.y + foundationDepth);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.strokeStyle = '#1e293b';
+    ctx.beginPath();
+    ctx.moveTo(bottomCorner.x, bottomCorner.y + 10);
+    ctx.lineTo(seCorner.x, seCorner.y + 10);
+    ctx.stroke();
+
+    ctx.strokeStyle = '#475569';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(bottomCorner.x, bottomCorner.y);
+    ctx.lineTo(seCorner.x, seCorner.y);
+    ctx.stroke();
+
+    // 5. Build Unified Depth-Sorted Render List (Painters Algorithm)
+    interface RenderableItem {
+      depth: number;
+      draw: () => void;
     }
 
-    // 4. Render Modern Office Furniture & Breakroom Props
-    // Breakroom Counter with Espresso Machine
-    const espressoTile = tiles.espresso_bar || tiles.coffee_bar;
+    const renderables: RenderableItem[] = [];
+
+    // A. Workstations (Desks & Chairs)
+    for (const station of DESK_STATIONS) {
+      const deskTile = tiles.desk;
+      const chairTile = tiles.chair;
+
+      // Chair positioned behind desk
+      const chairCol = station.deskCol - 0.25;
+      const chairRow = station.deskRow - 0.25;
+      const chairIso = gridToIso(chairCol, chairRow, originX, originY);
+
+      renderables.push({
+        depth: chairCol + chairRow - 0.1,
+        draw: () => {
+          if (chairTile) {
+            ctx.drawImage(tileset, chairTile.x, chairTile.y, chairTile.w, chairTile.h, chairIso.x - 16, chairIso.y - 28, chairTile.w, chairTile.h);
+          }
+        },
+      });
+
+      // Desk with dual monitors
+      const deskIso = gridToIso(station.deskCol, station.deskRow, originX, originY);
+      renderables.push({
+        depth: station.deskCol + station.deskRow,
+        draw: () => {
+          if (deskTile) {
+            ctx.drawImage(tileset, deskTile.x, deskTile.y, deskTile.w, deskTile.h, deskIso.x - 32, deskIso.y - 34, deskTile.w, deskTile.h);
+          }
+        },
+      });
+    }
+
+    // B. Breakroom Espresso Bar & Water Cooler
+    const espressoTile = tiles.espresso_bar;
     if (espressoTile) {
-      ctx.drawImage(tileset, espressoTile.x, espressoTile.y, espressoTile.w, espressoTile.h, 16.0 * tileSize, 2.5 * tileSize, espressoTile.w, espressoTile.h);
+      const iso = gridToIso(14.0, 2.0, originX, originY);
+      renderables.push({
+        depth: 14.0 + 2.0,
+        draw: () => {
+          ctx.drawImage(tileset, espressoTile.x, espressoTile.y, espressoTile.w, espressoTile.h, iso.x - 32, iso.y - 42, espressoTile.w, espressoTile.h);
+        },
+      });
     }
 
-    // Water Cooler
     const waterCoolerTile = tiles.water_cooler;
     if (waterCoolerTile) {
-      ctx.drawImage(tileset, waterCoolerTile.x, waterCoolerTile.y, waterCoolerTile.w, waterCoolerTile.h, 18.2 * tileSize, 3.8 * tileSize, waterCoolerTile.w, waterCoolerTile.h);
+      const iso = gridToIso(15.0, 3.0, originX, originY);
+      renderables.push({
+        depth: 15.0 + 3.0,
+        draw: () => {
+          ctx.drawImage(tileset, waterCoolerTile.x, waterCoolerTile.y, waterCoolerTile.w, waterCoolerTile.h, iso.x - 16, iso.y - 42, waterCoolerTile.w, waterCoolerTile.h);
+        },
+      });
     }
 
-    // Lush Potted Monstera Plants
+    // C. Potted Monstera Plants
     const plantTile = tiles.plant;
     if (plantTile) {
-      ctx.drawImage(tileset, plantTile.x, plantTile.y, plantTile.w, plantTile.h, 14.2 * tileSize, 2.2 * tileSize, plantTile.w, plantTile.h);
-      ctx.drawImage(tileset, plantTile.x, plantTile.y, plantTile.w, plantTile.h, 0.2 * tileSize, 2.2 * tileSize, plantTile.w, plantTile.h);
+      const plantPositions = [
+        { col: 12.0, row: 1.5 },
+        { col: 15.0, row: 6.0 },
+        { col: 1.5, row: 4.0 },
+      ];
+      for (const pos of plantPositions) {
+        const iso = gridToIso(pos.col, pos.row, originX, originY);
+        renderables.push({
+          depth: pos.col + pos.row,
+          draw: () => {
+            ctx.drawImage(tileset, plantTile.x, plantTile.y, plantTile.w, plantTile.h, iso.x - 24, iso.y - 42, plantTile.w, plantTile.h);
+          },
+        });
+      }
     }
 
-    // Meeting Area: Conference Table & Chairs
+    // D. Executive Conference Room (Large Table & Chairs)
     const confTableTile = tiles.conference_table;
     if (confTableTile) {
-      ctx.drawImage(tileset, confTableTile.x, confTableTile.y, confTableTile.w, confTableTile.h, 14.5 * tileSize, 8.2 * tileSize, confTableTile.w, confTableTile.h);
+      const iso = gridToIso(13.0, 9.0, originX, originY);
+      renderables.push({
+        depth: 13.0 + 9.0,
+        draw: () => {
+          ctx.drawImage(tileset, confTableTile.x, confTableTile.y, confTableTile.w, confTableTile.h, iso.x - 48, iso.y - 32, confTableTile.w, confTableTile.h);
+        },
+      });
     }
+
     const confChairTile = tiles.conference_chair || tiles.chair;
     if (confChairTile) {
-      ctx.drawImage(tileset, confChairTile.x, confChairTile.y, confChairTile.w, confChairTile.h, 15.0 * tileSize, 7.2 * tileSize, confChairTile.w, confChairTile.h);
-      ctx.drawImage(tileset, confChairTile.x, confChairTile.y, confChairTile.w, confChairTile.h, 16.0 * tileSize, 7.2 * tileSize, confChairTile.w, confChairTile.h);
+      for (const seat of CONF_MEETING_SEATS) {
+        const iso = gridToIso(seat.col, seat.row, originX, originY);
+        renderables.push({
+          depth: seat.col + seat.row - 0.2,
+          draw: () => {
+            ctx.drawImage(tileset, confChairTile.x, confChairTile.y, confChairTile.w, confChairTile.h, iso.x - 16, iso.y - 28, confChairTile.w, confChairTile.h);
+          },
+        });
+      }
     }
 
-    // Breakout Lounge Sofa
+    // E. Breakout Lounge Sofa & Coffee Table
     const sofaTile = tiles.lounge_sofa;
     if (sofaTile) {
-      ctx.drawImage(tileset, sofaTile.x, sofaTile.y, sofaTile.w, sofaTile.h, 14.5 * tileSize, 11.2 * tileSize, sofaTile.w, sofaTile.h);
+      const iso = gridToIso(13.0, 5.0, originX, originY);
+      renderables.push({
+        depth: 13.0 + 5.0,
+        draw: () => {
+          ctx.drawImage(tileset, sofaTile.x, sofaTile.y, sofaTile.w, sofaTile.h, iso.x - 32, iso.y - 42, sofaTile.w, sofaTile.h);
+        },
+      });
+    }
+    const coffeeTableTile = tiles.coffee_table;
+    if (coffeeTableTile) {
+      const iso = gridToIso(14.0, 5.2, originX, originY);
+      renderables.push({
+        depth: 14.0 + 5.2,
+        draw: () => {
+          ctx.drawImage(tileset, coffeeTableTile.x, coffeeTableTile.y, coffeeTableTile.w, coffeeTableTile.h, iso.x - 24, iso.y - 20, coffeeTableTile.w, coffeeTableTile.h);
+        },
+      });
     }
 
-    // 5. Render Desks & Chairs
-    for (const station of DESK_STATIONS) {
-      const deskX = station.deskCol * tileSize;
-      const deskY = station.deskRow * tileSize;
-      const chairX = deskX + 16;
-      const chairY = deskY + 6;
+    // F. Standalone Server Rack Tower
+    const serverRackTile = tiles.server_rack;
+    if (serverRackTile) {
+      const iso = gridToIso(11.0, 1.8, originX, originY);
+      renderables.push({
+        depth: 11.0 + 1.8,
+        draw: () => {
+          ctx.drawImage(tileset, serverRackTile.x, serverRackTile.y, serverRackTile.w, serverRackTile.h, iso.x - 24, iso.y - 56, serverRackTile.w, serverRackTile.h);
+        },
+      });
+    }
 
-      // Chair behind desk
-      const chairTile = tiles.chair;
-      if (chairTile) {
-        ctx.drawImage(tileset, chairTile.x, chairTile.y, chairTile.w, chairTile.h, chairX, chairY, chairTile.w, chairTile.h);
+    // G. Agent Entities
+    for (const entity of this.entities.values()) {
+      // Sitting agents have depth slightly ahead of desk so their head, hands, and upper torso are visible!
+      let entityDepth = entity.col + entity.row;
+      if (entity.state === 'sitting') {
+        entityDepth += 0.2; // Sit in front of desk surface!
+      } else if (entity.state === 'dragged') {
+        entityDepth += 999; // Dragged hero floats above all furniture!
       }
 
-      // Desk
-      const deskTile = tiles.desk;
-      if (deskTile) {
-        ctx.drawImage(tileset, deskTile.x, deskTile.y, deskTile.w, deskTile.h, deskX, deskY, deskTile.w, deskTile.h);
-      }
+      renderables.push({
+        depth: entityDepth,
+        draw: () => {
+          this.renderEntity(entity, elapsed);
+        },
+      });
     }
 
-    // 6. Render Agent Entities (Sorted by Y for proper 2.5D depth)
-    const sortedEntities = Array.from(this.entities.values()).sort((a, b) => a.y - b.y);
+    // Sort strictly by 2.5D depth from back to front!
+    renderables.sort((a, b) => a.depth - b.depth);
 
-    for (const entity of sortedEntities) {
-      this.renderEntity(entity, elapsed);
+    // Execute sorted draw calls
+    for (const item of renderables) {
+      item.draw();
     }
 
-    // 7. Ambient Modern Office Lighting (Natural Daylight & Warm Recessed Fixtures)
+    // 6. Atmospheric Lighting & Window Sunlight Beams
     this.renderAtmosphericLighting(elapsed);
 
-    // 8. Render Overhead Speech & Status Bubbles
-    for (const entity of sortedEntities) {
+    // 7. Overhead Dialogue Cards & Status Bubbles (Always on top layer)
+    for (const entity of this.entities.values()) {
       if (entity.bubbleText) {
-        this.renderModernDialogueBox(entity.bubbleSpeaker || entity.agent.agent, entity.bubbleText, entity.x + 16, entity.y - 18, elapsed);
+        this.renderModernDialogueBox(entity.bubbleSpeaker || entity.agent.agent, entity.bubbleText, entity.screenX, entity.screenY - 48, elapsed);
       } else if (entity.agent.status === 'working' && entity.state === 'sitting') {
         const taskSnippet = entity.agent.currentTask || entity.agent.currentPrompt || 'Coding...';
-        this.renderModernMiniTaskBubble(entity.agent.name || entity.agent.agent, taskSnippet, entity.x + 16, entity.y - 18, elapsed);
+        this.renderModernMiniTaskBubble(entity.agent.name || entity.agent.agent, taskSnippet, entity.screenX, entity.screenY - 48, elapsed);
       }
     }
 
@@ -549,8 +983,8 @@ export class OfficeCanvasEngine {
 
   private renderEntity(entity: AgentEntity, elapsed: number) {
     const { ctx, assets } = this;
-    const charW = assets.manifest.characters.frameWidth;
-    const charH = assets.manifest.characters.frameHeight;
+    const charW = assets.manifest.characters.frameWidth; // 32
+    const charH = assets.manifest.characters.frameHeight; // 48
 
     let charImg = assets.characterImages.get(entity.agent.agent.toLowerCase());
     if (!charImg) {
@@ -558,51 +992,55 @@ export class OfficeCanvasEngine {
     }
     if (!charImg) return;
 
-    // Pick animation row & frame
+    // Pick animation row & frame rate
     let row = 0;
-    let frameCount = 4;
+    const frameCount = 4;
     let frameRate = 3;
 
-    if (entity.state === 'walking') {
-      if (entity.direction === 'down') row = 2;
-      else if (entity.direction === 'up') row = 3;
-      else row = 4;
+    if (entity.state === 'dragged') {
+      row = 8; // Surprised floating pose with dangling legs!
+      frameRate = 4;
+    } else if (entity.state === 'walking') {
+      if (entity.direction === 'se') row = 2;
+      else if (entity.direction === 'ne') row = 3;
+      else row = 4; // sw
       frameRate = 6;
     } else if (entity.state === 'talking') {
-      row = entity.direction === 'up' ? 1 : 0;
+      row = entity.direction === 'ne' ? 1 : 0;
       frameRate = 3;
     } else {
-      // Sitting at desk
+      // Sitting at workstation
       if (entity.agent.status === 'working') {
-        row = 5; // Cast magic spell / typing
+        row = 5; // Fast mechanical keyboard typing with monitor glow
         frameRate = 8;
       } else if (entity.agent.status === 'blocked') {
-        row = 6; // Alarmed / alert
+        row = 6; // Thinking / alert / distressed
         frameRate = 4;
       } else if (entity.agent.status === 'done') {
         row = 7; // Victory fanfare
         frameRate = 4;
       } else {
-        row = 1; // Idle up facing desk
+        row = 0; // Relaxed idle facing front into room
         frameRate = 3;
       }
     }
 
     const currentFrame = Math.floor((elapsed / 1000) * frameRate) % frameCount;
 
-    // Selection Halo
+    // Selection Halo & Pointing Glove Cursor
     const isSelected = entity.agent.paneId === this.selectedPaneId;
     const isHovered = entity.agent.paneId === this.hoveredPaneId;
+
     if (isSelected || isHovered) {
       ctx.save();
       const pulse = Math.sin(elapsed / 200) * 0.2 + 0.8;
-      ctx.strokeStyle = isSelected ? `rgba(251, 191, 36, ${pulse})` : 'rgba(56, 189, 248, 0.7)';
-      ctx.lineWidth = 1.5;
-      ctx.beginPath();
-      ctx.ellipse(entity.x + 16, entity.y + 44, 14, 6, 0, 0, Math.PI * 2);
-      ctx.stroke();
+      const ringTile = assets.manifest.tileset.tiles.selection_halo;
+      if (ringTile) {
+        ctx.globalAlpha = isSelected ? pulse : 0.6;
+        ctx.drawImage(assets.tilesetImage, ringTile.x, ringTile.y, ringTile.w, ringTile.h, entity.screenX - 32, entity.screenY - 12, ringTile.w, ringTile.h);
+      }
 
-      // Classic FF white pointing hand cursor above selected hero!
+      // Classic FF White Pointing Glove Cursor bobbing above selected hero!
       if (isSelected) {
         const handBob = Math.sin(elapsed / 180) * 3;
         const cursorTile = assets.manifest.tileset.tiles.cursor_hand;
@@ -613,8 +1051,8 @@ export class OfficeCanvasEngine {
             cursorTile.y,
             cursorTile.w,
             cursorTile.h,
-            entity.x + 8,
-            entity.y - 28 + handBob,
+            entity.screenX - 12,
+            entity.screenY - 58 + handBob,
             cursorTile.w,
             cursorTile.h
           );
@@ -623,26 +1061,24 @@ export class OfficeCanvasEngine {
       ctx.restore();
     }
 
-    // Draw Character Sprite with horizontal flipping if facing left
-    ctx.save();
-    if (entity.state === 'walking' && entity.direction === 'side' && entity.facingLeft) {
-      ctx.translate(entity.x + charW, entity.y);
-      ctx.scale(-1, 1);
-      ctx.drawImage(charImg, currentFrame * charW, row * charH, charW, charH, 0, 0, charW, charH);
-    } else {
-      ctx.drawImage(charImg, currentFrame * charW, row * charH, charW, charH, entity.x, entity.y, charW, charH);
-    }
-    ctx.restore();
-
-    // If sitting at desk, draw desk in front to ensure 2.5D occlusion
-    if (entity.state === 'sitting') {
-      const deskTile = assets.manifest.tileset.tiles.desk;
-      if (deskTile) {
-        const deskX = entity.station.deskCol * assets.manifest.tileSize;
-        const deskY = entity.station.deskRow * assets.manifest.tileSize;
-        ctx.drawImage(assets.tilesetImage, deskTile.x, deskTile.y, deskTile.w, deskTile.h, deskX, deskY, deskTile.w, deskTile.h);
+    // Landing Dust Sparkle Effect
+    if (entity.dropDustTimer) {
+      const dustTile = assets.manifest.tileset.tiles.drop_dust;
+      if (dustTile) {
+        ctx.save();
+        ctx.globalAlpha = Math.min(1, entity.dropDustTimer);
+        ctx.drawImage(assets.tilesetImage, dustTile.x, dustTile.y, dustTile.w, dustTile.h, entity.screenX - 16, entity.screenY - 8, dustTile.w, dustTile.h);
+        ctx.restore();
       }
     }
+
+    // Draw Character Sprite
+    const drawX = entity.screenX - charW / 2;
+    // Sitting characters are seated naturally on their office chair
+    const yShift = entity.state === 'sitting' ? -18 : 4;
+    const drawY = entity.screenY - charH + yShift;
+
+    ctx.drawImage(charImg, currentFrame * charW, row * charH, charW, charH, drawX, drawY, charW, charH);
 
     // Nameplate below character
     this.renderEntityNameplate(entity);
@@ -655,10 +1091,10 @@ export class OfficeCanvasEngine {
     const name = entity.agent.name || entity.agent.agent;
     const textW = ctx.measureText(name).width;
     const badgeW = textW + 16;
-    const badgeX = entity.x + 16 - badgeW / 2;
-    const badgeY = entity.y + 48;
+    const badgeX = entity.screenX - badgeW / 2;
+    const badgeY = entity.screenY + (entity.state === 'sitting' ? 6 : 4);
 
-    // Modern Dark Slate Card styling for mini-nameplate
+    // Modern Dark Slate Card styling
     ctx.fillStyle = '#0f172a';
     ctx.beginPath();
     ctx.roundRect(badgeX, badgeY, badgeW, 13, 3);
@@ -667,7 +1103,7 @@ export class OfficeCanvasEngine {
     ctx.lineWidth = 1;
     ctx.stroke();
 
-    // Status Gem Dot
+    // Status Gem
     const gemColor =
       entity.agent.status === 'working'
         ? '#34d399'
@@ -688,7 +1124,7 @@ export class OfficeCanvasEngine {
   }
 
   /**
-   * Renders a modern sleek tech speech bubble with glassmorphic dark background and crisp border
+   * Renders sleek glassmorphic dialogue card
    */
   private renderModernDialogueBox(speaker: string, text: string, anchorX: number, anchorY: number, elapsed: number) {
     const { ctx } = this;
@@ -697,150 +1133,119 @@ export class OfficeCanvasEngine {
     ctx.save();
     ctx.font = 'bold 8px monospace';
 
-    // Format text lines
     const title = speaker.toUpperCase();
     let body = text;
-    if (body.length > 56) body = body.slice(0, 54) + '…';
+    if (body.length > 58) body = body.slice(0, 56) + '…';
 
     const titleW = ctx.measureText(title).width;
     const bodyW = ctx.measureText(body).width;
-    const boxW = Math.min(Math.max(titleW, bodyW) + 24, 230);
+    const boxW = Math.min(Math.max(titleW, bodyW) + 24, 240);
     const boxH = 34;
 
-    const boxX = Math.max(10, Math.min(OFFICE_COLS * 32 - boxW - 10, anchorX - boxW / 2));
-    const boxY = Math.max(12, anchorY - boxH - 10 + bob);
+    const boxX = Math.max(16, Math.min(this.baseWidth - boxW - 16, anchorX - boxW / 2));
+    const boxY = Math.max(16, anchorY + bob);
 
-    // Drop shadow
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
-    ctx.beginPath();
-    ctx.roundRect(boxX + 2, boxY + 3, boxW, boxH, 4);
-    ctx.fill();
-
-    // Modern Dark Slate Gradient Fill
-    const grad = ctx.createLinearGradient(boxX, boxY, boxX, boxY + boxH);
-    grad.addColorStop(0, '#1e293b');
-    grad.addColorStop(1, '#0f172a');
-    ctx.fillStyle = grad;
+    // Glassmorphic Dark Slate Background
+    ctx.fillStyle = 'rgba(15, 23, 42, 0.95)';
     ctx.beginPath();
     ctx.roundRect(boxX, boxY, boxW, boxH, 4);
     ctx.fill();
 
-    // Crisp Modern Border
-    ctx.strokeStyle = '#475569';
-    ctx.lineWidth = 1;
+    // Border
+    ctx.strokeStyle = '#38bdf8';
+    ctx.lineWidth = 1.2;
     ctx.stroke();
 
-    // Downward dialogue arrow pointer
-    ctx.fillStyle = '#1e293b';
+    // Downward Pointer
+    ctx.fillStyle = 'rgba(15, 23, 42, 0.95)';
     ctx.beginPath();
-    ctx.moveTo(anchorX - 4, boxY + boxH);
-    ctx.lineTo(anchorX + 4, boxY + boxH);
-    ctx.lineTo(anchorX, boxY + boxH + 4);
+    ctx.moveTo(anchorX - 5, boxY + boxH);
+    ctx.lineTo(anchorX + 5, boxY + boxH);
+    ctx.lineTo(anchorX, boxY + boxH + 5);
     ctx.closePath();
     ctx.fill();
 
-    // Active status dot next to speaker
-    ctx.fillStyle = '#34d399';
-    ctx.beginPath();
-    ctx.arc(boxX + 9, boxY + 11, 2.5, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Speaker Title
+    // Content
     ctx.fillStyle = '#38bdf8';
-    ctx.fillText(title, boxX + 16, boxY + 13);
+    ctx.fillText(`💬 ${title}`, boxX + 8, boxY + 12);
 
-    // Message Body
+    ctx.font = '8px monospace';
     ctx.fillStyle = '#f8fafc';
-    ctx.fillText(body, boxX + 8, boxY + 26);
+    ctx.fillText(body, boxX + 8, boxY + 24);
 
     ctx.restore();
   }
 
-  private renderModernMiniTaskBubble(speaker: string, task: string, anchorX: number, anchorY: number, elapsed: number) {
+  /**
+   * Renders subtle mini task bubble above coding agents
+   */
+  private renderModernMiniTaskBubble(_speaker: string, task: string, anchorX: number, anchorY: number, elapsed: number) {
     const { ctx } = this;
-    const bob = Math.sin(elapsed / 200) * 1.5;
+    const bob = Math.sin(elapsed / 300) * 1.5;
 
     ctx.save();
-    ctx.font = 'bold 8px monospace';
-    let cleanTask = `${speaker}: ${task}`;
-    if (cleanTask.length > 32) cleanTask = cleanTask.slice(0, 31) + '…';
+    ctx.font = '7.5px monospace';
 
-    const textW = ctx.measureText(cleanTask).width;
-    const boxW = Math.max(textW + 24, 60);
-    const boxH = 18;
-    const boxX = Math.max(10, Math.min(OFFICE_COLS * 32 - boxW - 10, anchorX - boxW / 2));
-    const boxY = Math.max(12, anchorY - boxH - 6 + bob);
+    let snippet = task.replace(/[\r\n]+/g, ' ').trim();
+    if (snippet.length > 34) snippet = snippet.slice(0, 32) + '…';
 
-    // Drop shadow
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-    ctx.beginPath();
-    ctx.roundRect(boxX + 2, boxY + 2, boxW, boxH, 3);
-    ctx.fill();
+    const textW = ctx.measureText(snippet).width;
+    const boxW = Math.max(textW + 18, 64);
+    const boxH = 16;
+    const boxX = Math.max(10, Math.min(this.baseWidth - boxW - 10, anchorX - boxW / 2));
+    const boxY = anchorY + bob;
 
-    // Modern Dark Slate Gradient
-    const grad = ctx.createLinearGradient(boxX, boxY, boxX, boxY + boxH);
-    grad.addColorStop(0, '#1e293b');
-    grad.addColorStop(1, '#0f172a');
-    ctx.fillStyle = grad;
+    ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
     ctx.beginPath();
     ctx.roundRect(boxX, boxY, boxW, boxH, 3);
     ctx.fill();
 
-    // Crisp border
-    ctx.strokeStyle = '#475569';
+    ctx.strokeStyle = '#34d399';
     ctx.lineWidth = 1;
     ctx.stroke();
 
-    // Pointer tail
-    ctx.fillStyle = '#0f172a';
-    ctx.beginPath();
-    ctx.moveTo(anchorX - 3, boxY + boxH);
-    ctx.lineTo(anchorX + 3, boxY + boxH);
-    ctx.lineTo(anchorX, boxY + boxH + 3);
-    ctx.closePath();
-    ctx.fill();
-
-    // Pulsing green working indicator
-    const pulse = Math.sin(elapsed / 180) * 0.3 + 0.7;
+    // Active Green Pulse
+    const pulse = Math.sin(elapsed / 150) * 0.3 + 0.7;
     ctx.fillStyle = `rgba(52, 211, 153, ${pulse})`;
     ctx.beginPath();
-    ctx.arc(boxX + 8, boxY + 9, 2.5, 0, Math.PI * 2);
+    ctx.arc(boxX + 6, boxY + 8, 2, 0, Math.PI * 2);
     ctx.fill();
 
-    // Task text
     ctx.fillStyle = '#e2e8f0';
-    ctx.fillText(cleanTask, boxX + 15, boxY + 12);
+    ctx.fillText(snippet, boxX + 12, boxY + 11);
 
     ctx.restore();
   }
 
+  /**
+   * Natural Daylight & Warm Recessed Lighting
+   */
   private renderAtmosphericLighting(elapsed: number) {
-    const { ctx } = this;
+    const { ctx, originX, originY } = this;
     ctx.save();
     ctx.globalCompositeOperation = 'screen';
 
-    // Soft daylight wash from panoramic office windows (Cols 3, 10, 18.5)
-    const windowCols = [3.5, 10.5, 18.5];
-    for (const wc of windowCols) {
-      const wx = wc * 32;
-      const wy = 24;
-      const rad = ctx.createRadialGradient(wx, wy, 8, wx, wy + 80, 140);
-      rad.addColorStop(0, 'rgba(186, 230, 253, 0.12)');
-      rad.addColorStop(0.6, 'rgba(125, 211, 252, 0.04)');
-      rad.addColorStop(1, 'rgba(0, 0, 0, 0)');
-      ctx.fillStyle = rad;
-      ctx.fillRect(wx - 140, wy - 40, 280, 200);
-    }
+    // Window daylight beam streaming across the office
+    const beam = ctx.createLinearGradient(originX - 100, originY, originX + 200, originY + 400);
+    beam.addColorStop(0, 'rgba(255, 255, 255, 0.05)');
+    beam.addColorStop(0.5, 'rgba(219, 234, 254, 0.03)');
+    beam.addColorStop(1, 'rgba(255, 255, 255, 0)');
 
-    // Subtle server rack status LED ambient bounce (Col 13.5)
-    const serverPulse = Math.sin(elapsed / 250) * 0.03 + 0.08;
-    const sx = 13.5 * 32;
-    const sy = 24;
-    const serverRad = ctx.createRadialGradient(sx, sy, 4, sx, sy, 60);
-    serverRad.addColorStop(0, `rgba(34, 211, 238, ${serverPulse})`);
-    serverRad.addColorStop(1, 'rgba(0, 0, 0, 0)');
-    ctx.fillStyle = serverRad;
-    ctx.fillRect(sx - 60, sy - 60, 120, 120);
+    ctx.fillStyle = beam;
+    ctx.beginPath();
+    ctx.moveTo(originX - 160, originY + 20);
+    ctx.lineTo(originX + 160, originY + 20);
+    ctx.lineTo(originX + 380, originY + 450);
+    ctx.lineTo(originX - 60, originY + 450);
+    ctx.closePath();
+    ctx.fill();
+
+    // Ambient server rack LED flicker in the distance
+    const flicker = Math.sin(elapsed / 120) * 0.02 + 0.04;
+    ctx.fillStyle = `rgba(56, 189, 248, ${flicker})`;
+    ctx.beginPath();
+    ctx.arc(originX + 180, originY + 100, 60, 0, Math.PI * 2);
+    ctx.fill();
 
     ctx.restore();
   }
