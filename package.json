@@ -1,0 +1,21 @@
+{
+  "name": "herdr-office",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Pixel office GUI orchestrator for Herdr agents",
+  "workspaces": [
+    "client",
+    "server"
+  ],
+  "scripts": {
+    "dev": "concurrently -k \"npm run dev -w server\" \"npm run dev -w client\"",
+    "dev:server": "npm run dev -w server",
+    "dev:client": "npm run dev -w client",
+    "build": "npm run build -w client && npm run build -w server",
+    "start": "node server/dist/index.js",
+    "test": "npm run test -w server && npm run test -w client"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}
