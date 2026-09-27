@@ -8,6 +8,14 @@ export interface UseHerdrWebSocketReturn {
   error: string | null;
   focusPane: (paneId: string) => void;
   refresh: () => void;
+  promptAgent: (paneId: string, prompt: string) => void;
+  interruptAgent: (paneId: string) => void;
+  spawnAgent: (data: { name?: string; kind?: string; initialPrompt?: string; cwd?: string }) => void;
+  fetchAgentOutput: (paneId: string) => void;
+  agentOutputs: Record<string, string>;
+  promptResult: { paneId: string; success: boolean; message?: string } | null;
+  spawnResult: { success: boolean; paneId?: string; name?: string; error?: string } | null;
+  clearResults: () => void;
 }
 
 export function useHerdrWebSocket(url = 'ws://localhost:4000'): UseHerdrWebSocketReturn {
@@ -15,6 +23,10 @@ export function useHerdrWebSocket(url = 'ws://localhost:4000'): UseHerdrWebSocke
   const [connected, setConnected] = useState(false);
   const [herdrConnected, setHerdrConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [agentOutputs, setAgentOutputs] = useState<Record<string, string>>({});
+  const [promptResult, setPromptResult] = useState<{ paneId: string; success: boolean; message?: string } | null>(null);
+  const [spawnResult, setSpawnResult] = useState<{ success: boolean; paneId?: string; name?: string; error?: string } | null>(null);
+
   const wsRef = useRef<WebSocket | null>(null);
 
   const sendMessage = useCallback((msg: ClientMessage) => {
@@ -30,6 +42,27 @@ export function useHerdrWebSocket(url = 'ws://localhost:4000'): UseHerdrWebSocke
   const refresh = useCallback(() => {
     sendMessage({ type: 'refresh' });
   }, [sendMessage]);
+
+  const promptAgent = useCallback((paneId: string, prompt: string) => {
+    sendMessage({ type: 'prompt_agent', paneId, prompt });
+  }, [sendMessage]);
+
+  const interruptAgent = useCallback((paneId: string) => {
+    sendMessage({ type: 'interrupt_agent', paneId });
+  }, [sendMessage]);
+
+  const spawnAgent = useCallback((data: { name?: string; kind?: string; initialPrompt?: string; cwd?: string }) => {
+    sendMessage({ type: 'spawn_agent', ...data });
+  }, [sendMessage]);
+
+  const fetchAgentOutput = useCallback((paneId: string) => {
+    sendMessage({ type: 'get_agent_output', paneId });
+  }, [sendMessage]);
+
+  const clearResults = useCallback(() => {
+    setPromptResult(null);
+    setSpawnResult(null);
+  }, []);
 
   useEffect(() => {
     let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
@@ -67,6 +100,24 @@ export function useHerdrWebSocket(url = 'ws://localhost:4000'): UseHerdrWebSocke
             } else if (data.type === 'herdr_status') {
               setHerdrConnected(data.connected);
               if (data.error) setError(data.error);
+            } else if (data.type === 'agent_prompt_result') {
+              setPromptResult({
+                paneId: data.paneId,
+                success: data.success,
+                message: data.message,
+              });
+            } else if (data.type === 'spawn_agent_result') {
+              setSpawnResult({
+                success: data.success,
+                paneId: data.paneId,
+                name: data.name,
+                error: data.error,
+              });
+            } else if (data.type === 'agent_output') {
+              setAgentOutputs((prev) => ({
+                ...prev,
+                [data.paneId]: data.output,
+              }));
             }
           } catch (e) {
             console.error('Failed to parse WebSocket message:', e);
@@ -106,5 +157,13 @@ export function useHerdrWebSocket(url = 'ws://localhost:4000'): UseHerdrWebSocke
     error,
     focusPane,
     refresh,
+    promptAgent,
+    interruptAgent,
+    spawnAgent,
+    fetchAgentOutput,
+    agentOutputs,
+    promptResult,
+    spawnResult,
+    clearResults,
   };
 }

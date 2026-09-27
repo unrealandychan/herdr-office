@@ -144,6 +144,63 @@ wss.on('connection', (ws) => {
         await connector.focusPane(msg.paneId);
       } else if (msg.type === 'refresh') {
         await connector.pollOnce();
+      } else if (msg.type === 'prompt_agent') {
+        const result = await connector.promptAgent(msg.paneId, msg.prompt);
+        if (ws.readyState === WebSocket.OPEN) {
+          ws.send(
+            JSON.stringify({
+              type: 'agent_prompt_result',
+              paneId: msg.paneId,
+              success: result.success,
+              message: result.message,
+              timestamp: Date.now(),
+            })
+          );
+        }
+      } else if (msg.type === 'interrupt_agent') {
+        const result = await connector.interruptAgent(msg.paneId);
+        if (ws.readyState === WebSocket.OPEN) {
+          ws.send(
+            JSON.stringify({
+              type: 'agent_prompt_result',
+              paneId: msg.paneId,
+              success: result.success,
+              message: result.message,
+              timestamp: Date.now(),
+            })
+          );
+        }
+      } else if (msg.type === 'spawn_agent') {
+        const result = await connector.spawnAgent({
+          name: msg.name,
+          kind: msg.kind,
+          initialPrompt: msg.initialPrompt,
+          cwd: msg.cwd,
+        });
+        if (ws.readyState === WebSocket.OPEN) {
+          ws.send(
+            JSON.stringify({
+              type: 'spawn_agent_result',
+              success: result.success,
+              paneId: result.paneId,
+              name: result.name,
+              error: result.error,
+              timestamp: Date.now(),
+            })
+          );
+        }
+      } else if (msg.type === 'get_agent_output') {
+        const output = await connector.getAgentOutput(msg.paneId);
+        if (ws.readyState === WebSocket.OPEN) {
+          ws.send(
+            JSON.stringify({
+              type: 'agent_output',
+              paneId: msg.paneId,
+              output,
+              timestamp: Date.now(),
+            })
+          );
+        }
       }
     } catch (err) {
       console.error('[herdr-office-server] Error processing client message:', err);

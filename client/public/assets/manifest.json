@@ -1,83 +1,107 @@
 {
-  "name": "herdr-office-core-art",
-  "version": "1.0.0",
-  "tileSize": 16,
+  "name": "herdr-office-32bit-retro-art",
+  "version": "2.0.0",
+  "tileSize": 32,
   "tileset": {
     "path": "/assets/tiles/office_tiles.png",
-    "width": 128,
-    "height": 64,
+    "width": 256,
+    "height": 256,
     "tiles": {
       "floor_wood": {
         "x": 0,
         "y": 0,
-        "w": 16,
-        "h": 16
+        "w": 32,
+        "h": 32
       },
       "floor_carpet": {
-        "x": 16,
-        "y": 0,
-        "w": 16,
-        "h": 16
-      },
-      "floor_tile": {
         "x": 32,
-        "y": 0,
-        "w": 16,
-        "h": 16
-      },
-      "wall_top": {
-        "x": 48,
-        "y": 0,
-        "w": 16,
-        "h": 24
-      },
-      "wall_window": {
-        "x": 64,
-        "y": 0,
-        "w": 16,
-        "h": 24
-      },
-      "desk": {
-        "x": 80,
         "y": 0,
         "w": 32,
-        "h": 24
+        "h": 32
+      },
+      "floor_tile": {
+        "x": 64,
+        "y": 0,
+        "w": 32,
+        "h": 32
+      },
+      "wall_top": {
+        "x": 96,
+        "y": 0,
+        "w": 32,
+        "h": 48
+      },
+      "wall_window": {
+        "x": 128,
+        "y": 0,
+        "w": 32,
+        "h": 48
+      },
+      "wall_whiteboard": {
+        "x": 160,
+        "y": 0,
+        "w": 32,
+        "h": 48
+      },
+      "wall_server": {
+        "x": 192,
+        "y": 0,
+        "w": 32,
+        "h": 48
+      },
+      "desk": {
+        "x": 0,
+        "y": 64,
+        "w": 64,
+        "h": 48
       },
       "chair": {
-        "x": 0,
-        "y": 32,
-        "w": 16,
-        "h": 16
+        "x": 64,
+        "y": 64,
+        "w": 32,
+        "h": 32
       },
       "plant": {
-        "x": 16,
-        "y": 32,
-        "w": 16,
-        "h": 24
+        "x": 96,
+        "y": 64,
+        "w": 32,
+        "h": 48
       },
       "water_cooler": {
-        "x": 32,
-        "y": 32,
-        "w": 16,
-        "h": 24
+        "x": 128,
+        "y": 64,
+        "w": 32,
+        "h": 48
+      },
+      "espresso_bar": {
+        "x": 160,
+        "y": 64,
+        "w": 32,
+        "h": 48
       },
       "bubble_blocked": {
-        "x": 48,
-        "y": 32,
-        "w": 16,
-        "h": 16
+        "x": 192,
+        "y": 64,
+        "w": 32,
+        "h": 32
       },
       "bubble_done": {
-        "x": 64,
-        "y": 32,
-        "w": 16,
-        "h": 16
+        "x": 224,
+        "y": 64,
+        "w": 32,
+        "h": 32
+      },
+      "bubble_working": {
+        "x": 0,
+        "y": 128,
+        "w": 32,
+        "h": 32
       }
     }
   },
   "characters": {
-    "frameWidth": 16,
-    "frameHeight": 24,
+    "frameWidth": 32,
+    "frameHeight": 48,
     "variants": {
       "pi": "/assets/characters/character_pi.png",
       "claude": "/assets/characters/character_claude.png",
@@ -89,17 +113,21 @@
         "row": 0,
         "frames": [
           0,
-          1
+          1,
+          2,
+          3
         ],
-        "frameRate": 2
+        "frameRate": 3
       },
       "idle_up": {
         "row": 1,
         "frames": [
           0,
-          1
+          1,
+          2,
+          3
         ],
-        "frameRate": 2
+        "frameRate": 3
       },
       "walk_down": {
         "row": 2,
