@@ -3,17 +3,18 @@ import { loadAssets, type LoadedAssets } from '../engine/assetLoader';
 import { OfficeCanvasEngine } from '../engine/officeCanvas';
 import { useHerdrWebSocket } from '../hooks/useHerdrWebSocket';
 import { AgentDrawer } from './AgentDrawer';
-import type { HerdrAgent } from '../types';
 
 export const OfficeView: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const engineRef = useRef<OfficeCanvasEngine | null>(null);
   const [assets, setAssets] = useState<LoadedAssets | null>(null);
   const [scale, setScale] = useState(3);
-  const [selectedAgent, setSelectedAgent] = useState<HerdrAgent | null>(null);
+  const [selectedPaneId, setSelectedPaneId] = useState<string | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
 
   const { agents, connected, herdrConnected, focusPane, refresh } = useHerdrWebSocket();
+
+  const selectedAgent = agents.find((a) => a.paneId === selectedPaneId) ?? null;
 
   // Load pixel assets on startup
   useEffect(() => {
@@ -33,7 +34,7 @@ export const OfficeView: React.FC = () => {
       canvas: canvasRef.current,
       assets,
       scale,
-      onSelectAgent: (agent) => setSelectedAgent(agent),
+      onSelectAgent: (agent) => setSelectedPaneId(agent ? agent.paneId : null),
     });
 
     engine.setAgents(agents);
@@ -44,6 +45,7 @@ export const OfficeView: React.FC = () => {
       engine.destroy();
       engineRef.current = null;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [assets]);
 
   // Update scale when changed
@@ -57,11 +59,6 @@ export const OfficeView: React.FC = () => {
   useEffect(() => {
     if (engineRef.current) {
       engineRef.current.setAgents(agents);
-    }
-    // Update selected agent if its data changed
-    if (selectedAgent) {
-      const updated = agents.find((a) => a.paneId === selectedAgent.paneId);
-      if (updated) setSelectedAgent(updated);
     }
   }, [agents]);
 
@@ -181,7 +178,7 @@ export const OfficeView: React.FC = () => {
         {/* Selected Agent Drawer */}
         <AgentDrawer
           agent={selectedAgent}
-          onClose={() => setSelectedAgent(null)}
+          onClose={() => setSelectedPaneId(null)}
           onFocusPane={focusPane}
         />
       </main>

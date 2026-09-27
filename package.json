@@ -12,9 +12,11 @@
     "dev:server": "npm run dev -w server",
     "dev:client": "npm run dev -w client",
     "build": "npm run build -w client && npm run build -w server",
+    "lint": "npm run lint -w client",
     "art:generate": "tsx scripts/generate-art.ts",
     "start": "node server/dist/index.js",
-    "test": "npm run test -w server && npm run test -w client"
+    "test": "npm run test -w server && npm run test -w client",
+    "test:e2e": "npm run build -w server && tsx test-e2e.ts"
   },
   "devDependencies": {
     "@types/pngjs": "^6.0.5",

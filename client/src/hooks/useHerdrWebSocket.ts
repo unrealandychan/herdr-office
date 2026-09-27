@@ -83,7 +83,7 @@ export function useHerdrWebSocket(url = 'ws://localhost:4000'): UseHerdrWebSocke
           console.warn('WebSocket connection error:', e);
           ws.close();
         };
-      } catch (e) {
+      } catch {
         if (!isUnmounted) {
           reconnectTimer = setTimeout(connect, 2000);
         }
