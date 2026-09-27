@@ -4,6 +4,7 @@ import { OfficeCanvasEngine } from '../engine/officeCanvas';
 import { useHerdrWebSocket } from '../hooks/useHerdrWebSocket';
 import { AgentDrawer } from './AgentDrawer';
 import { SpawnAgentModal } from './SpawnAgentModal';
+import { WorkspaceSyncModal } from './WorkspaceSyncModal';
 
 export const OfficeView: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -12,6 +13,7 @@ export const OfficeView: React.FC = () => {
   const [scale, setScale] = useState(2);
   const [selectedPaneId, setSelectedPaneId] = useState<string | null>(null);
   const [isSpawnModalOpen, setIsSpawnModalOpen] = useState(false);
+  const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
   const [spawnRequestedAt, setSpawnRequestedAt] = useState<number | null>(null);
   const [recentSpeech, setRecentSpeech] = useState<{ from: string; to: string; text: string } | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -26,6 +28,10 @@ export const OfficeView: React.FC = () => {
     interruptAgent,
     spawnAgent,
     fetchAgentOutput,
+    sendAgentMessage,
+    syncWorkspace,
+    syncReport,
+    recentMessages,
     agentOutputs,
     promptResult,
     spawnResult,
@@ -54,7 +60,7 @@ export const OfficeView: React.FC = () => {
     loadAssets()
       .then((loaded) => setAssets(loaded))
       .catch((err) => {
-        console.error('Failed to load Final Fantasy assets:', err);
+        console.error('Failed to load modern office assets:', err);
         setLoadError(String(err));
       });
   }, []);
@@ -114,15 +120,38 @@ export const OfficeView: React.FC = () => {
   };
 
   const handleSendAgentMessage = (fromPaneId: string, toPaneId: string, text: string) => {
+    // 1. Deliver real inter-agent message via Herdr backend
+    sendAgentMessage({ fromPaneId, toPaneId, message: text, taskType: 'delegate' });
+
+    // 2. Animate agent delivering message on canvas
     if (engineRef.current) {
       engineRef.current.sendAgentMessage(fromPaneId, toPaneId, text);
     }
   };
 
+  const handleOpenStandup = () => {
+    setIsSyncModalOpen(true);
+    syncWorkspace({ action: 'standup' });
+    if (engineRef.current) {
+      engineRef.current.setMeetingActive(true);
+    }
+  };
+
+  const handleCloseStandup = () => {
+    setIsSyncModalOpen(false);
+    if (engineRef.current) {
+      engineRef.current.setMeetingActive(false);
+    }
+  };
+
+  const handleBroadcastGoal = (goal: string) => {
+    syncWorkspace({ action: 'broadcast', goal });
+  };
+
   if (loadError) {
     return (
       <div style={{ padding: '40px', color: '#ef4444', textAlign: 'center' }}>
-        <h2>Error Loading Final Fantasy Assets</h2>
+        <h2>Error Loading Office Assets</h2>
         <p>{loadError}</p>
       </div>
     );
@@ -139,21 +168,21 @@ export const OfficeView: React.FC = () => {
         fontFamily: 'system-ui, -apple-system, sans-serif',
       }}
     >
-      {/* Top Navbar Styled in Final Fantasy Blue Banner */}
+      {/* Top Navbar Styled in Modern Tech Slate Banner */}
       <header
         style={{
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           padding: '8px 18px',
-          background: 'linear-gradient(180deg, #091754 0%, #03082a 100%)',
-          borderBottom: '2px solid #ffffff',
-          boxShadow: '0 4px 18px rgba(0, 0, 0, 0.7)',
+          background: 'linear-gradient(180deg, #1e293b 0%, #0f172a 100%)',
+          borderBottom: '1.5px solid #334155',
+          boxShadow: '0 4px 18px rgba(0, 0, 0, 0.5)',
           zIndex: 10,
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <span style={{ fontSize: '1.4rem' }}>⚔️</span>
+          <span style={{ fontSize: '1.4rem' }}>🏢</span>
           <div>
             <h1
               style={{
@@ -161,26 +190,25 @@ export const OfficeView: React.FC = () => {
                 margin: 0,
                 fontWeight: 800,
                 letterSpacing: '0.04em',
-                color: '#fbbf24',
+                color: '#f8fafc',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '8px',
-                textShadow: '0 2px 4px rgba(0,0,0,0.8)',
               }}
             >
-              HERDR GUILD
+              HERDR OFFICE
               <span
                 style={{
                   fontSize: '0.65rem',
                   padding: '1px 6px',
                   borderRadius: '3px',
-                  background: '#02061e',
-                  color: '#67e8f9',
-                  border: '1px solid #38bdf8',
+                  background: '#1e3a8a',
+                  color: '#60a5fa',
+                  border: '1px solid #3b82f6',
                   fontWeight: 700,
                 }}
               >
-                FINAL FANTASY RPG
+                2D PIXEL ART
               </span>
             </h1>
           </div>
@@ -195,7 +223,7 @@ export const OfficeView: React.FC = () => {
               border: `1px solid ${connected ? (herdrConnected ? '#10b981' : '#ca8a04') : '#dc2626'}`,
             }}
           >
-            {connected ? (herdrConnected ? 'PARTY SYNCED' : 'HERDR IDLE') : 'OFFLINE'}
+            {connected ? (herdrConnected ? 'TEAM SYNCED' : 'HERDR IDLE') : 'OFFLINE'}
           </span>
         </div>
 
@@ -241,10 +269,10 @@ export const OfficeView: React.FC = () => {
                     display: 'inline-block',
                   }}
                 />
-                <span style={{ fontWeight: 700, color: isSelected ? '#fbbf24' : '#ffffff' }}>{a.name || a.agent}</span>
+                <span style={{ fontWeight: 700, color: isSelected ? '#38bdf8' : '#ffffff' }}>{a.name || a.agent}</span>
                 {a.status === 'working' && (
-                  <span style={{ color: '#67e8f9', fontSize: '0.68rem', maxWidth: '120px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    {a.currentTask ? `• ${a.currentTask}` : '• Casting'}
+                  <span style={{ color: '#38bdf8', fontSize: '0.68rem', maxWidth: '120px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {a.currentTask ? `• ${a.currentTask}` : '• Coding'}
                   </span>
                 )}
               </button>
@@ -252,8 +280,29 @@ export const OfficeView: React.FC = () => {
           })}
         </div>
 
-        {/* Controls: Spawn Hero Agent, Scale, Refresh */}
+        {/* Controls: Standup / Sync All, Spawn Agent, Scale, Refresh */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <button
+            onClick={handleOpenStandup}
+            style={{
+              padding: '6px 14px',
+              borderRadius: '4px',
+              background: 'linear-gradient(180deg, #059669 0%, #047857 100%)',
+              color: '#ffffff',
+              border: '1px solid #10b981',
+              fontSize: '0.8rem',
+              fontWeight: 800,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              boxShadow: '0 2px 8px rgba(16, 185, 129, 0.4)',
+            }}
+          >
+            <span>🤝</span>
+            <span>All-Hands Standup</span>
+          </button>
+
           <button
             onClick={() => setIsSpawnModalOpen(true)}
             style={{
@@ -261,18 +310,18 @@ export const OfficeView: React.FC = () => {
               borderRadius: '4px',
               background: 'linear-gradient(180deg, #2563eb 0%, #1d4ed8 100%)',
               color: '#ffffff',
-              border: '1.5px solid #ffffff',
+              border: '1px solid #3b82f6',
               fontSize: '0.8rem',
               fontWeight: 800,
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
-              boxShadow: '0 2px 8px rgba(37, 99, 235, 0.5)',
+              boxShadow: '0 2px 8px rgba(37, 99, 235, 0.4)',
             }}
           >
-            <span>✨</span>
-            <span>+ Summon Agent</span>
+            <span>+</span>
+            <span>Spawn Agent</span>
           </button>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
@@ -330,9 +379,9 @@ export const OfficeView: React.FC = () => {
         }}
       >
         {!assets ? (
-          <div style={{ color: '#67e8f9', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div style={{ color: '#94a3b8', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span style={{ display: 'inline-block', animation: 'spin 1s linear infinite' }}>⠋</span>
-            Channeling Final Fantasy retro graphics...
+            Loading modern pixel office assets...
           </div>
         ) : (
           <canvas
@@ -396,6 +445,19 @@ export const OfficeView: React.FC = () => {
           onSpawn={handleSpawnSubmit}
           isSpawning={isSpawning}
           spawnError={spawnResult && !spawnResult.success ? spawnResult.error : null}
+        />
+
+        {/* All-Hands Standup & Sync Modal */}
+        <WorkspaceSyncModal
+          isOpen={isSyncModalOpen}
+          onClose={handleCloseStandup}
+          agents={agents}
+          syncReport={syncReport}
+          recentMessages={recentMessages}
+          onBroadcastGoal={handleBroadcastGoal}
+          onRefreshSync={() => syncWorkspace({ action: 'standup' })}
+          onDelegateMessage={handleSendAgentMessage}
+          onFocusPane={focusPane}
         />
       </main>
     </div>

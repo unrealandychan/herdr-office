@@ -49,27 +49,13 @@ export interface AgentEntity {
   nextAutonomousActionTime: number;
 }
 
-const COLLAB_DIALOGUES = [
-  {
-    msg: 'Greetings colleague! All unit tests pass with flying colors.',
-    reply: 'Splendid! I shall merge the spellcraft branch immediately.',
-  },
-  {
-    msg: 'Could you review the canvas rendering diff for the guild hall?',
-    reply: 'Already inspected—the 32-bit pixel aesthetic is peerless!',
-  },
-  {
-    msg: 'I detected a blocked subprocess. Should we dispatch an interrupt?',
-    reply: 'Affirmative! Issuing clean recovery protocol now.',
-  },
-  {
-    msg: 'The floating mana crystal energy readings are optimal.',
-    reply: 'Our coding agent party is at peak efficiency!',
-  },
-  {
-    msg: 'Synchronizing our workspace tasks across Herdr panes.',
-    reply: 'Session locks aligned. Ready for next prompt!',
-  },
+const CONF_SEATS = [
+  { x: 14.5 * 32, y: 7.2 * 32, dir: 'down' as const },
+  { x: 16.0 * 32, y: 7.2 * 32, dir: 'down' as const },
+  { x: 17.2 * 32, y: 7.2 * 32, dir: 'down' as const },
+  { x: 14.5 * 32, y: 9.8 * 32, dir: 'up' as const },
+  { x: 16.0 * 32, y: 9.8 * 32, dir: 'up' as const },
+  { x: 17.2 * 32, y: 9.8 * 32, dir: 'up' as const },
 ];
 
 export class OfficeCanvasEngine {
@@ -88,6 +74,7 @@ export class OfficeCanvasEngine {
   private onSelectAgent?: (agent: HerdrAgent | null) => void;
   private onAgentSpoke?: (fromName: string, toName: string, text: string) => void;
   private activeConversation: ActiveConversation | null = null;
+  private meetingActive = false;
 
   constructor(options: CanvasEngineOptions) {
     this.canvas = options.canvas;
@@ -120,17 +107,16 @@ export class OfficeCanvasEngine {
   }
 
   /**
-   * User or AI triggered message exchange between agents.
-   * Causes fromAgent to walk over to toAgent, display FF dialogue, and walk back.
+   * Real message exchange between agents.
+   * Causes fromAgent to walk over to toAgent, display the actual message, and return.
    */
   public sendAgentMessage(fromPaneId: string, toPaneId: string, customText?: string) {
     const fromEntity = this.entities.get(fromPaneId);
     const toEntity = this.entities.get(toPaneId);
     if (!fromEntity || !toEntity) return;
 
-    const dialog = COLLAB_DIALOGUES[Math.floor(Math.random() * COLLAB_DIALOGUES.length)];
-    const fromText = customText || dialog.msg;
-    const replyText = dialog.reply;
+    const fromText = customText || 'Coordinating workspace synchronization.';
+    const replyText = `Acknowledged. Received from @${fromEntity.agent.name || fromEntity.agent.agent}`;
 
     // Meet near recipient's desk
     const meetX = toEntity.homeX - 28;
@@ -154,6 +140,29 @@ export class OfficeCanvasEngine {
     fromEntity.state = 'walking';
 
     this.onAgentSpoke?.(fromEntity.agent.name || fromEntity.agent.agent, toEntity.agent.name || toEntity.agent.agent, fromText);
+  }
+
+  /**
+   * Put office into Standup Meeting mode: agents assemble at conference table.
+   */
+  public setMeetingActive(active: boolean) {
+    this.meetingActive = active;
+    const entityList = Array.from(this.entities.values());
+
+    if (active) {
+      entityList.forEach((entity, index) => {
+        const seat = CONF_SEATS[index % CONF_SEATS.length];
+        entity.targetX = seat.x;
+        entity.targetY = seat.y;
+        entity.state = 'walking';
+      });
+    } else {
+      entityList.forEach((entity) => {
+        entity.targetX = entity.homeX;
+        entity.targetY = entity.homeY;
+        entity.state = 'walking';
+      });
+    }
   }
 
   public start() {
@@ -279,34 +288,32 @@ export class OfficeCanvasEngine {
         }
       }
 
-      // Autonomous random wander / talk (if not currently in targeted conversation)
+      // Autonomous occasional coffee/water break (ONLY when idle and not in a meeting)
       if (
+        !this.meetingActive &&
+        entity.agent.status === 'idle' &&
         entity.state === 'sitting' &&
         !this.activeConversation &&
         now >= entity.nextAutonomousActionTime
       ) {
-        entity.nextAutonomousActionTime = now + 12000 + Math.random() * 14000;
+        entity.nextAutonomousActionTime = now + 25000 + Math.random() * 30000;
 
-        // If another agent exists, 50% chance to walk over and chat!
-        const otherEntities = Array.from(this.entities.values()).filter((e) => e.agent.paneId !== entity.agent.paneId);
-        if (otherEntities.length > 0 && Math.random() < 0.6) {
-          const partner = otherEntities[Math.floor(Math.random() * otherEntities.length)];
-          this.sendAgentMessage(entity.agent.paneId, partner.agent.paneId);
-        } else {
-          // Walk to visit Mana Save Crystal or Ancient Bookshelf
-          const poi = GUILD_POIS[Math.floor(Math.random() * GUILD_POIS.length)];
+        // 30% chance for an idle agent to grab water or espresso
+        if (Math.random() < 0.3) {
+          const breakPOIs = GUILD_POIS.filter((p) => p.id === 'water_cooler' || p.id === 'coffee');
+          const poi = breakPOIs[Math.floor(Math.random() * breakPOIs.length)] || GUILD_POIS[0];
           entity.targetX = poi.col * 32;
           entity.targetY = poi.row * 32;
           entity.state = 'walking';
 
-          // Set return timer
+          // Set return timer after short break
           setTimeout(() => {
             if (entity.state !== 'walking' || entity.targetX !== entity.homeX) {
               entity.targetX = entity.homeX;
               entity.targetY = entity.homeY;
               entity.state = 'walking';
             }
-          }, 4500);
+          }, 4000);
         }
       }
     }
@@ -441,7 +448,7 @@ export class OfficeCanvasEngine {
       }
     }
 
-    // 3. Render Castle Wall (row 0, height 48px: Gothic Windows, Bookshelves, Mana Crystal, Torches)
+    // 3. Render Wall (row 0, height 48px: Windows, Whiteboard, Server Rack, Bookshelf)
     for (let c = 0; c < OFFICE_COLS; c++) {
       const cell = map[0][c];
       const tileMeta = tiles[cell.type] || tiles.wall_top;
@@ -460,15 +467,41 @@ export class OfficeCanvasEngine {
       }
     }
 
-    // 4. Render Guild Props (Alchemist Potion Table & Treasure Chest)
-    const potionsTile = tiles.potions || tiles.plant;
-    if (potionsTile) {
-      ctx.drawImage(tileset, potionsTile.x, potionsTile.y, potionsTile.w, potionsTile.h, 16.5 * tileSize, 2.8 * tileSize, potionsTile.w, potionsTile.h);
+    // 4. Render Modern Office Furniture & Breakroom Props
+    // Breakroom Counter with Espresso Machine
+    const espressoTile = tiles.espresso_bar || tiles.coffee_bar;
+    if (espressoTile) {
+      ctx.drawImage(tileset, espressoTile.x, espressoTile.y, espressoTile.w, espressoTile.h, 16.0 * tileSize, 2.5 * tileSize, espressoTile.w, espressoTile.h);
     }
 
-    const chestTile = tiles.chest || tiles.water_cooler;
-    if (chestTile) {
-      ctx.drawImage(tileset, chestTile.x, chestTile.y, chestTile.w, chestTile.h, 18 * tileSize, 4.0 * tileSize, chestTile.w, chestTile.h);
+    // Water Cooler
+    const waterCoolerTile = tiles.water_cooler;
+    if (waterCoolerTile) {
+      ctx.drawImage(tileset, waterCoolerTile.x, waterCoolerTile.y, waterCoolerTile.w, waterCoolerTile.h, 18.2 * tileSize, 3.8 * tileSize, waterCoolerTile.w, waterCoolerTile.h);
+    }
+
+    // Lush Potted Monstera Plants
+    const plantTile = tiles.plant;
+    if (plantTile) {
+      ctx.drawImage(tileset, plantTile.x, plantTile.y, plantTile.w, plantTile.h, 14.2 * tileSize, 2.2 * tileSize, plantTile.w, plantTile.h);
+      ctx.drawImage(tileset, plantTile.x, plantTile.y, plantTile.w, plantTile.h, 0.2 * tileSize, 2.2 * tileSize, plantTile.w, plantTile.h);
+    }
+
+    // Meeting Area: Conference Table & Chairs
+    const confTableTile = tiles.conference_table;
+    if (confTableTile) {
+      ctx.drawImage(tileset, confTableTile.x, confTableTile.y, confTableTile.w, confTableTile.h, 14.5 * tileSize, 8.2 * tileSize, confTableTile.w, confTableTile.h);
+    }
+    const confChairTile = tiles.conference_chair || tiles.chair;
+    if (confChairTile) {
+      ctx.drawImage(tileset, confChairTile.x, confChairTile.y, confChairTile.w, confChairTile.h, 15.0 * tileSize, 7.2 * tileSize, confChairTile.w, confChairTile.h);
+      ctx.drawImage(tileset, confChairTile.x, confChairTile.y, confChairTile.w, confChairTile.h, 16.0 * tileSize, 7.2 * tileSize, confChairTile.w, confChairTile.h);
+    }
+
+    // Breakout Lounge Sofa
+    const sofaTile = tiles.lounge_sofa;
+    if (sofaTile) {
+      ctx.drawImage(tileset, sofaTile.x, sofaTile.y, sofaTile.w, sofaTile.h, 14.5 * tileSize, 11.2 * tileSize, sofaTile.w, sofaTile.h);
     }
 
     // 5. Render Desks & Chairs
@@ -498,17 +531,16 @@ export class OfficeCanvasEngine {
       this.renderEntity(entity, elapsed);
     }
 
-    // 7. Ambient Castle Lighting & Torchlight Glow
+    // 7. Ambient Modern Office Lighting (Natural Daylight & Warm Recessed Fixtures)
     this.renderAtmosphericLighting(elapsed);
 
-    // 8. Render Classic Final Fantasy Dialogue Boxes (Overhead)
+    // 8. Render Overhead Speech & Status Bubbles
     for (const entity of sortedEntities) {
       if (entity.bubbleText) {
-        this.renderFFDialogueBox(entity.bubbleSpeaker || entity.agent.agent, entity.bubbleText, entity.x + 16, entity.y - 18, elapsed);
+        this.renderModernDialogueBox(entity.bubbleSpeaker || entity.agent.agent, entity.bubbleText, entity.x + 16, entity.y - 18, elapsed);
       } else if (entity.agent.status === 'working' && entity.state === 'sitting') {
-        // Floating thought spellbook rune
-        const taskSnippet = entity.agent.currentTask || entity.agent.currentPrompt || 'Channeling spell...';
-        this.renderFFMiniTaskBubble(entity.agent.name || entity.agent.agent, taskSnippet, entity.x + 16, entity.y - 18, elapsed);
+        const taskSnippet = entity.agent.currentTask || entity.agent.currentPrompt || 'Coding...';
+        this.renderModernMiniTaskBubble(entity.agent.name || entity.agent.agent, taskSnippet, entity.x + 16, entity.y - 18, elapsed);
       }
     }
 
@@ -626,12 +658,12 @@ export class OfficeCanvasEngine {
     const badgeX = entity.x + 16 - badgeW / 2;
     const badgeY = entity.y + 48;
 
-    // Classic FF Blue window styling for mini-nameplate
-    ctx.fillStyle = '#06134a';
+    // Modern Dark Slate Card styling for mini-nameplate
+    ctx.fillStyle = '#0f172a';
     ctx.beginPath();
-    ctx.roundRect(badgeX, badgeY, badgeW, 13, 2);
+    ctx.roundRect(badgeX, badgeY, badgeW, 13, 3);
     ctx.fill();
-    ctx.strokeStyle = '#e2e8f0';
+    ctx.strokeStyle = '#334155';
     ctx.lineWidth = 1;
     ctx.stroke();
 
@@ -656,9 +688,9 @@ export class OfficeCanvasEngine {
   }
 
   /**
-   * Renders a classic Final Fantasy Blue Dialogue Box with silver double-beveled border
+   * Renders a modern sleek tech speech bubble with glassmorphic dark background and crisp border
    */
-  private renderFFDialogueBox(speaker: string, text: string, anchorX: number, anchorY: number, elapsed: number) {
+  private renderModernDialogueBox(speaker: string, text: string, anchorX: number, anchorY: number, elapsed: number) {
     const { ctx } = this;
     const bob = Math.sin(elapsed / 240) * 2;
 
@@ -666,65 +698,65 @@ export class OfficeCanvasEngine {
     ctx.font = 'bold 8px monospace';
 
     // Format text lines
-    const title = `【 ${speaker.toUpperCase()} 】`;
+    const title = speaker.toUpperCase();
     let body = text;
     if (body.length > 56) body = body.slice(0, 54) + '…';
 
     const titleW = ctx.measureText(title).width;
     const bodyW = ctx.measureText(body).width;
-    const boxW = Math.min(Math.max(titleW, bodyW) + 20, 220);
+    const boxW = Math.min(Math.max(titleW, bodyW) + 24, 230);
     const boxH = 34;
 
     const boxX = Math.max(10, Math.min(OFFICE_COLS * 32 - boxW - 10, anchorX - boxW / 2));
     const boxY = Math.max(12, anchorY - boxH - 10 + bob);
 
     // Drop shadow
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
     ctx.beginPath();
-    ctx.roundRect(boxX + 3, boxY + 3, boxW, boxH, 4);
+    ctx.roundRect(boxX + 2, boxY + 3, boxW, boxH, 4);
     ctx.fill();
 
-    // Final Fantasy Blue Gradient Fill
+    // Modern Dark Slate Gradient Fill
     const grad = ctx.createLinearGradient(boxX, boxY, boxX, boxY + boxH);
-    grad.addColorStop(0, '#0c229c');
-    grad.addColorStop(0.6, '#061362');
-    grad.addColorStop(1, '#020630');
+    grad.addColorStop(0, '#1e293b');
+    grad.addColorStop(1, '#0f172a');
     ctx.fillStyle = grad;
     ctx.beginPath();
-    ctx.roundRect(boxX, boxY, boxW, boxH, 3);
+    ctx.roundRect(boxX, boxY, boxW, boxH, 4);
     ctx.fill();
 
-    // White outer border
-    ctx.strokeStyle = '#ffffff';
-    ctx.lineWidth = 1.5;
+    // Crisp Modern Border
+    ctx.strokeStyle = '#475569';
+    ctx.lineWidth = 1;
     ctx.stroke();
 
-    // Inner grey bevel border
-    ctx.strokeStyle = '#94a3b8';
-    ctx.lineWidth = 1;
-    ctx.strokeRect(boxX + 2, boxY + 2, boxW - 4, boxH - 4);
-
     // Downward dialogue arrow pointer
-    ctx.fillStyle = '#ffffff';
+    ctx.fillStyle = '#1e293b';
     ctx.beginPath();
     ctx.moveTo(anchorX - 4, boxY + boxH);
     ctx.lineTo(anchorX + 4, boxY + boxH);
-    ctx.lineTo(anchorX, boxY + boxH + 5);
+    ctx.lineTo(anchorX, boxY + boxH + 4);
     ctx.closePath();
     ctx.fill();
 
-    // Speaker Title (Gold)
-    ctx.fillStyle = '#fbbf24';
-    ctx.fillText(title, boxX + 6, boxY + 12);
+    // Active status dot next to speaker
+    ctx.fillStyle = '#34d399';
+    ctx.beginPath();
+    ctx.arc(boxX + 9, boxY + 11, 2.5, 0, Math.PI * 2);
+    ctx.fill();
 
-    // Message Body (White with slight shadow)
+    // Speaker Title
+    ctx.fillStyle = '#38bdf8';
+    ctx.fillText(title, boxX + 16, boxY + 13);
+
+    // Message Body
     ctx.fillStyle = '#f8fafc';
-    ctx.fillText(body, boxX + 6, boxY + 25);
+    ctx.fillText(body, boxX + 8, boxY + 26);
 
     ctx.restore();
   }
 
-  private renderFFMiniTaskBubble(speaker: string, task: string, anchorX: number, anchorY: number, elapsed: number) {
+  private renderModernMiniTaskBubble(speaker: string, task: string, anchorX: number, anchorY: number, elapsed: number) {
     const { ctx } = this;
     const bob = Math.sin(elapsed / 200) * 1.5;
 
@@ -740,43 +772,43 @@ export class OfficeCanvasEngine {
     const boxY = Math.max(12, anchorY - boxH - 6 + bob);
 
     // Drop shadow
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
     ctx.beginPath();
     ctx.roundRect(boxX + 2, boxY + 2, boxW, boxH, 3);
     ctx.fill();
 
-    // FF Blue Gradient
+    // Modern Dark Slate Gradient
     const grad = ctx.createLinearGradient(boxX, boxY, boxX, boxY + boxH);
-    grad.addColorStop(0, '#0a1d82');
-    grad.addColorStop(1, '#020836');
+    grad.addColorStop(0, '#1e293b');
+    grad.addColorStop(1, '#0f172a');
     ctx.fillStyle = grad;
     ctx.beginPath();
     ctx.roundRect(boxX, boxY, boxW, boxH, 3);
     ctx.fill();
 
-    // Silver border
-    ctx.strokeStyle = '#e2e8f0';
+    // Crisp border
+    ctx.strokeStyle = '#475569';
     ctx.lineWidth = 1;
     ctx.stroke();
 
     // Pointer tail
-    ctx.fillStyle = '#e2e8f0';
+    ctx.fillStyle = '#0f172a';
     ctx.beginPath();
     ctx.moveTo(anchorX - 3, boxY + boxH);
     ctx.lineTo(anchorX + 3, boxY + boxH);
-    ctx.lineTo(anchorX, boxY + boxH + 4);
+    ctx.lineTo(anchorX, boxY + boxH + 3);
     ctx.closePath();
     ctx.fill();
 
-    // Spinning magical crystal rune dot
-    const runePulse = Math.sin(elapsed / 150) * 0.3 + 0.7;
-    ctx.fillStyle = `rgba(34, 211, 238, ${runePulse})`;
+    // Pulsing green working indicator
+    const pulse = Math.sin(elapsed / 180) * 0.3 + 0.7;
+    ctx.fillStyle = `rgba(52, 211, 153, ${pulse})`;
     ctx.beginPath();
     ctx.arc(boxX + 8, boxY + 9, 2.5, 0, Math.PI * 2);
     ctx.fill();
 
     // Task text
-    ctx.fillStyle = '#ecfeff';
+    ctx.fillStyle = '#e2e8f0';
     ctx.fillText(cleanTask, boxX + 15, boxY + 12);
 
     ctx.restore();
@@ -787,30 +819,28 @@ export class OfficeCanvasEngine {
     ctx.save();
     ctx.globalCompositeOperation = 'screen';
 
-    // 1. Flickering Wall Torches Lighting (Col 4 and Col 12)
-    const torchFlicker = Math.sin(elapsed / 100) * 0.04 + Math.cos(elapsed / 170) * 0.03 + 0.12;
-    const torchCols = [4.5, 12.5];
-    for (const tc of torchCols) {
-      const tx = tc * 32;
-      const ty = 24;
-      const rad = ctx.createRadialGradient(tx, ty, 4, tx, ty, 80);
-      rad.addColorStop(0, `rgba(251, 191, 36, ${torchFlicker})`);
-      rad.addColorStop(0.5, `rgba(249, 115, 22, ${torchFlicker * 0.6})`);
+    // Soft daylight wash from panoramic office windows (Cols 3, 10, 18.5)
+    const windowCols = [3.5, 10.5, 18.5];
+    for (const wc of windowCols) {
+      const wx = wc * 32;
+      const wy = 24;
+      const rad = ctx.createRadialGradient(wx, wy, 8, wx, wy + 80, 140);
+      rad.addColorStop(0, 'rgba(186, 230, 253, 0.12)');
+      rad.addColorStop(0.6, 'rgba(125, 211, 252, 0.04)');
       rad.addColorStop(1, 'rgba(0, 0, 0, 0)');
       ctx.fillStyle = rad;
-      ctx.fillRect(tx - 80, ty - 80, 160, 160);
+      ctx.fillRect(wx - 140, wy - 40, 280, 200);
     }
 
-    // 2. Floating Mana Crystal Cyan Glow (Col 14.5)
-    const crystalPulse = Math.sin(elapsed / 300) * 0.08 + 0.22;
-    const cx = 14.5 * 32;
-    const cy = 24;
-    const crystalRad = ctx.createRadialGradient(cx, cy, 6, cx, cy, 96);
-    crystalRad.addColorStop(0, `rgba(103, 232, 249, ${crystalPulse})`);
-    crystalRad.addColorStop(0.6, `rgba(6, 182, 212, ${crystalPulse * 0.4})`);
-    crystalRad.addColorStop(1, 'rgba(0, 0, 0, 0)');
-    ctx.fillStyle = crystalRad;
-    ctx.fillRect(cx - 96, cy - 96, 192, 192);
+    // Subtle server rack status LED ambient bounce (Col 13.5)
+    const serverPulse = Math.sin(elapsed / 250) * 0.03 + 0.08;
+    const sx = 13.5 * 32;
+    const sy = 24;
+    const serverRad = ctx.createRadialGradient(sx, sy, 4, sx, sy, 60);
+    serverRad.addColorStop(0, `rgba(34, 211, 238, ${serverPulse})`);
+    serverRad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+    ctx.fillStyle = serverRad;
+    ctx.fillRect(sx - 60, sy - 60, 120, 120);
 
     ctx.restore();
   }

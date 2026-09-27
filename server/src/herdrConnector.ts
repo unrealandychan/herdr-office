@@ -2,12 +2,121 @@ import { execFile } from 'node:child_process';
 import { EventEmitter } from 'node:events';
 import fs from 'node:fs';
 import { promisify } from 'node:util';
-import type { AgentStatus, HerdrAgent } from './types.js';
+import type {
+  AgentMessageEvent,
+  AgentMessagePayload,
+  AgentStatus,
+  AgentSyncInfo,
+  HerdrAgent,
+  WorkspaceSyncReport,
+  WorkspaceSyncRequest,
+} from './types.js';
 
 const execFileAsync = promisify(execFile);
 
 function stripAnsi(str: string): string {
   return str.replace(/\x1B\[[0-?]*[ -/]*[@-~]|\x1B\].*?(?:\x07|\x1B\\)/g, '');
+}
+
+export function extractTerminalDetails(text: string): {
+  lastOutputSummary?: string;
+  currentTask?: string;
+  blockedReason?: string;
+} {
+  const clean = stripAnsi(text);
+  const lines = clean
+    .split('\n')
+    .map((l) => l.trim())
+    .filter((l) => {
+      if (!l) return false;
+      if (l.startsWith('──') || l.startsWith('==') || l.startsWith('--') || l.startsWith('───')) return false;
+      if (l.startsWith('Elapsed ') || l.startsWith('Took ')) return false;
+      if (l.startsWith('$ herdr agent') || l.startsWith('$ herdr pane')) return false;
+      if (/\(timeout \d+s\)/.test(l)) return false;
+      if (/↑\d+k?.*↓\d+k?/.test(l)) return false;
+      if (
+        l.includes('(auto)') &&
+        (l.includes('gemini') || l.includes('claude') || l.includes('pi') || l.includes('medium') || l.includes('flash'))
+      ) {
+        return false;
+      }
+      return true;
+    });
+
+  if (lines.length === 0) {
+    return {};
+  }
+
+  // Detect blocker
+  let blockedReason: string | undefined;
+  const blockerPatterns = [
+    /(?:error|exception|failed|fatal):?\s*(.+)/i,
+    /(?:cannot find|permission denied|eacces|enoent|command not found)/i,
+    /(?:waiting for (?:user )?input|do you want to proceed|\(y\/n\)|\[y\/N\]|\?\s*$)/i,
+    /(?:rejected|blocked|rate limit|quota exceeded)/i,
+  ];
+
+  for (let i = lines.length - 1; i >= 0; i--) {
+    const line = lines[i];
+    for (const pat of blockerPatterns) {
+      if (pat.test(line)) {
+        blockedReason = line.slice(0, 150);
+        break;
+      }
+    }
+    if (blockedReason) break;
+  }
+
+  // Detect current task
+  let currentTask: string | undefined;
+  for (let i = lines.length - 1; i >= 0; i--) {
+    const line = lines[i];
+    if (/^[⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏]\s*(Working|Thinking|Executing)/i.test(line)) {
+      continue;
+    }
+    if (/^(bash|read|edit|write|create_goal|get_goal):/i.test(line)) {
+      currentTask = line.slice(0, 120);
+      break;
+    }
+    const isHeading =
+      /^(#|\*\*|Task:)/i.test(line) ||
+      (!line.endsWith('.') &&
+        !line.endsWith(',') &&
+        !/^(I'm|I am|This |We |Please |Note:)/i.test(line) &&
+        /^[A-Z][a-zA-Z0-9\s\-:]{3,70}$/.test(line) &&
+        /(?:Developing|Implementing|Investigating|Refining|Creating|Building|Testing|Reviewing|Fixing|Writing|Sync|Task|Status|Agent|Detailing|Defining)\b/i.test(
+          line
+        ));
+
+    if (isHeading) {
+      currentTask = line.replace(/[*#]/g, '').trim().slice(0, 120);
+      break;
+    }
+    if (
+      !currentTask &&
+      line.length > 5 &&
+      line.length < 80 &&
+      !line.includes('{') &&
+      !line.includes('}') &&
+      !line.endsWith('.') &&
+      /^[A-Z]/.test(line)
+    ) {
+      currentTask = line.slice(0, 120);
+    }
+  }
+
+  // Last output summary
+  let lastOutputSummary: string | undefined;
+  for (let i = lines.length - 1; i >= 0; i--) {
+    const line = lines[i];
+    if (/^[⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏]\s*(Working|Thinking|Executing)/i.test(line)) {
+      continue;
+    }
+    lastOutputSummary = line.slice(0, 150);
+    break;
+  }
+
+  return { lastOutputSummary, currentTask, blockedReason };
 }
 
 function extractSessionInfo(sessionPath: string): { prompt?: string; task?: string } {
@@ -100,6 +209,9 @@ export class HerdrConnector extends EventEmitter {
   private isConnected = false;
   private sessionCache = new Map<string, { mtime: number; prompt?: string; task?: string }>();
   private terminalCache = new Map<string, { time: number; output: string }>();
+  private activeGoal?: string;
+  private meetingActive = false;
+  private lastSyncReport: WorkspaceSyncReport | null = null;
 
   constructor(options: { pollIntervalMs?: number } = {}) {
     super();
@@ -178,7 +290,8 @@ export class HerdrConnector extends EventEmitter {
         if (!currentTask && (status === 'working' || status === 'blocked')) {
           const cachedTerm = this.terminalCache.get(raw.pane_id);
           if (cachedTerm && now - cachedTerm.time < 3000) {
-            currentTask = this.summarizeTerminal(cachedTerm.output);
+            const details = extractTerminalDetails(cachedTerm.output);
+            currentTask = details.currentTask || details.lastOutputSummary;
           } else {
             // Read terminal async without blocking long
             try {
@@ -189,7 +302,8 @@ export class HerdrConnector extends EventEmitter {
               );
               const clean = stripAnsi(termOut);
               this.terminalCache.set(raw.pane_id, { time: now, output: clean });
-              currentTask = this.summarizeTerminal(clean);
+              const details = extractTerminalDetails(clean);
+              currentTask = details.currentTask || details.lastOutputSummary;
             } catch {
               // Ignore terminal read failure
             }
@@ -383,20 +497,162 @@ export class HerdrConnector extends EventEmitter {
     }
   }
 
-  private summarizeTerminal(text: string): string | undefined {
-    const lines = text
-      .split('\n')
-      .map((l) => l.trim())
-      .filter((l) => l.length > 0 && !l.startsWith('──') && !l.startsWith('Elapsed'));
-    if (lines.length === 0) return undefined;
-    for (let i = lines.length - 1; i >= 0; i--) {
-      const line = lines[i];
-      if (line.includes('Working') || line.includes('auto') || line.includes('gemini') || line.includes('claude')) {
-        continue;
-      }
-      return line.slice(0, 100);
+  public async sendAgentMessage(payload: AgentMessagePayload): Promise<AgentMessageEvent> {
+    if (this.agents.size === 0) {
+      await this.pollOnce();
     }
-    return lines[lines.length - 1].slice(0, 100);
+
+    const findAgent = (idOrName: string): HerdrAgent | undefined => {
+      const direct = this.agents.get(idOrName);
+      if (direct) return direct;
+      return Array.from(this.agents.values()).find(
+        (a) => a.name === idOrName || a.paneId === idOrName || a.agent === idOrName
+      );
+    };
+
+    const fromAgent = findAgent(payload.fromPaneId);
+    const toAgent = findAgent(payload.toPaneId);
+
+    const fromName = fromAgent?.name || fromAgent?.agent || payload.fromPaneId;
+    const toName = toAgent?.name || toAgent?.agent || payload.toPaneId;
+    const fromPaneId = fromAgent?.paneId || payload.fromPaneId;
+    const toPaneId = toAgent?.paneId || payload.toPaneId;
+
+    const taskTypePrefix = payload.taskType ? ` (${payload.taskType})` : '';
+    const formattedMessage = `[From @${fromName}${taskTypePrefix}]: ${payload.message}`;
+
+    const target = toPaneId || toAgent?.name || payload.toPaneId;
+    let delivered = false;
+
+    try {
+      await execFileAsync('herdr', ['agent', 'prompt', target, formattedMessage], {
+        timeout: 10000,
+      });
+      delivered = true;
+    } catch (promptErr) {
+      console.warn(`[HerdrConnector] herdr agent prompt failed on ${target}, attempting fallback:`, promptErr);
+      try {
+        await execFileAsync('herdr', ['pane', 'send-text', toPaneId, `${formattedMessage}\n`], {
+          timeout: 5000,
+        });
+        delivered = true;
+      } catch (paneErr) {
+        console.error(`[HerdrConnector] pane send-text fallback also failed on ${toPaneId}:`, paneErr);
+        delivered = false;
+      }
+    }
+
+    const event: AgentMessageEvent = {
+      id: `msg-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      timestamp: Date.now(),
+      fromPaneId,
+      fromName,
+      toPaneId,
+      toName,
+      message: payload.message,
+      status: delivered ? 'delivered' : 'failed',
+    };
+
+    this.terminalCache.delete(toPaneId);
+    this.emit('agent_message', event);
+    return event;
+  }
+
+  public async syncWorkspace(request?: WorkspaceSyncRequest): Promise<WorkspaceSyncReport> {
+    const agents = await this.pollOnce();
+
+    if (request?.goal !== undefined) {
+      this.activeGoal = request.goal;
+    }
+    if (request?.action === 'standup') {
+      this.meetingActive = true;
+    } else if (request?.action === 'broadcast') {
+      this.meetingActive = false;
+    }
+
+    if (request?.goal && request.action === 'broadcast') {
+      const broadcastPrompt = `[Workspace Goal Update]: ${request.goal}`;
+      await Promise.allSettled(
+        agents.map(async (agent) => {
+          const target = agent.paneId;
+          try {
+            await execFileAsync('herdr', ['agent', 'prompt', target, broadcastPrompt], {
+              timeout: 8000,
+            });
+          } catch {
+            try {
+              await execFileAsync('herdr', ['pane', 'send-text', agent.paneId, `${broadcastPrompt}\n`], {
+                timeout: 4000,
+              });
+            } catch {
+              // ignore
+            }
+          }
+        })
+      );
+    }
+
+    const syncAgents: AgentSyncInfo[] = await Promise.all(
+      agents.map(async (agent) => {
+        let output = '';
+        try {
+          output = await this.getAgentOutput(agent.paneId);
+        } catch {
+          // ignore
+        }
+
+        const details = extractTerminalDetails(output);
+        const currentTask = agent.currentTask || details.currentTask || details.lastOutputSummary;
+        let blockedReason = details.blockedReason;
+        if (agent.status === 'blocked' && !blockedReason) {
+          blockedReason = details.lastOutputSummary || 'Agent is waiting for input or resolution';
+        }
+
+        return {
+          paneId: agent.paneId,
+          name: agent.name || agent.agent,
+          status: agent.status,
+          currentTask,
+          lastOutputSummary: details.lastOutputSummary,
+          blockedReason,
+        };
+      })
+    );
+
+    const report: WorkspaceSyncReport = {
+      timestamp: Date.now(),
+      activeGoal: this.activeGoal,
+      meetingActive: this.meetingActive,
+      agents: syncAgents,
+    };
+
+    this.lastSyncReport = report;
+    this.emit('workspace_sync', report);
+    return report;
+  }
+
+  public getWorkspaceSyncReport(): WorkspaceSyncReport | null {
+    if (this.lastSyncReport) return this.lastSyncReport;
+    const currentAgents = this.getAgents();
+    if (currentAgents.length === 0) return null;
+    return {
+      timestamp: Date.now(),
+      activeGoal: this.activeGoal,
+      meetingActive: this.meetingActive,
+      agents: currentAgents.map((a) => ({
+        paneId: a.paneId,
+        name: a.name || a.agent,
+        status: a.status,
+        currentTask: a.currentTask,
+        lastOutputSummary: undefined,
+        blockedReason: a.status === 'blocked' ? 'Agent in blocked state' : undefined,
+      })),
+    };
+  }
+
+  private summarizeTerminal(text: string): string | undefined {
+    const details = extractTerminalDetails(text);
+    return details.currentTask || details.lastOutputSummary;
   }
 
   private poll = async (): Promise<void> => {

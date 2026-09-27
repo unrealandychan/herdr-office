@@ -23,13 +23,17 @@ export interface PointOfInterest {
   row: number;
 }
 
-export const GUILD_POIS: PointOfInterest[] = [
-  { id: 'crystal', name: 'Mana Save Crystal', col: 14.5, row: 1.6 },
-  { id: 'bookshelf', name: 'Ancient Library Tomes', col: 6.5, row: 1.6 },
-  { id: 'potions', name: 'Alchemist Table', col: 16.5, row: 3.2 },
-  { id: 'chest', name: 'Guild Treasure Chest', col: 18, row: 4.5 },
-  { id: 'hall_center', name: 'Guild Hall Center', col: 6, row: 5.5 },
+export const OFFICE_POIS: PointOfInterest[] = [
+  { id: 'water_cooler', name: 'Water Cooler', col: 18.2, row: 4.2 },
+  { id: 'coffee', name: 'Espresso Bar', col: 16.5, row: 3.2 },
+  { id: 'whiteboard', name: 'Sprint Whiteboard', col: 5.5, row: 1.6 },
+  { id: 'server', name: 'Server Rack', col: 13.5, row: 1.6 },
+  { id: 'conference', name: 'Conference Table', col: 15.5, row: 9.0 },
+  { id: 'lounge', name: 'Breakout Lounge', col: 6, row: 5.5 },
 ];
+
+// Compatibility alias for any existing code
+export const GUILD_POIS = OFFICE_POIS;
 
 export type OfficeTileType =
   | 'floor_wood'
@@ -38,8 +42,9 @@ export type OfficeTileType =
   | 'floor_tile'
   | 'wall_top'
   | 'wall_window'
-  | 'wall_bookshelf'
-  | 'crystal';
+  | 'wall_whiteboard'
+  | 'wall_server'
+  | 'wall_bookshelf';
 
 export interface OfficeTile {
   type: OfficeTileType;
@@ -52,28 +57,34 @@ export function createOfficeMap(): OfficeTile[][] {
     const row: OfficeTile[] = [];
     for (let c = 0; c < OFFICE_COLS; c++) {
       if (r === 0) {
-        // Back wall of Final Fantasy Guild Castle
-        if (c === 2 || c === 3 || c === 9 || c === 10 || c === 17 || c === 18) {
-          row.push({ type: 'wall_window' }); // Gothic Stained Glass
-        } else if (c === 6 || c === 7) {
-          row.push({ type: 'wall_bookshelf' }); // Ancient Library
-        } else if (c === 14 || c === 15) {
-          row.push({ type: 'crystal' }); // Floating Save Crystal
+        // Back wall of Modern Tech Office
+        if (c >= 2 && c <= 4) {
+          row.push({ type: 'wall_window' }); // Panoramic city skyline window
+        } else if (c === 5 || c === 6) {
+          row.push({ type: 'wall_whiteboard' }); // Agile sprint whiteboard
+        } else if (c >= 9 && c <= 11) {
+          row.push({ type: 'wall_window' }); // Panoramic window
+        } else if (c === 13 || c === 14) {
+          row.push({ type: 'wall_server' }); // Modern server rack
+        } else if (c === 15 || c === 16) {
+          row.push({ type: 'wall_bookshelf' }); // Tech bookshelf
+        } else if (c >= 18 && c <= 19) {
+          row.push({ type: 'wall_window' }); // Corner window
         } else {
-          row.push({ type: 'wall_top' }); // Castle Stone Wall with Wall Torch
+          row.push({ type: 'wall_top' }); // Modern off-white drywall with molding
         }
       } else if (c >= 14 && r <= 5) {
-        // Alchemist & Treasury flagstone area
-        row.push({ type: 'floor_stone' });
+        // Breakroom / kitchen ceramic checkerboard floor
+        row.push({ type: 'floor_tile' });
       } else if (
         (c >= 1 && c <= 12 && r >= 3 && r <= 5) ||
         (c >= 1 && c <= 12 && r >= 6 && r <= 8) ||
         (c >= 1 && c <= 12 && r >= 10 && r <= 12)
       ) {
-        // Royal crimson velvet carpet with gold filigree under workstations
+        // Modern navy / slate gray carpet tiles under workstation pods
         row.push({ type: 'floor_carpet' });
       } else {
-        // Castle tavern hardwood planks
+        // Honey oak parquet hardwood floor
         row.push({ type: 'floor_wood' });
       }
     }

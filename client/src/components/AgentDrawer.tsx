@@ -90,7 +90,7 @@ export const AgentDrawer: React.FC<AgentDrawerProps> = ({
 
   const handleDispatchCollab = () => {
     if (!recipientPaneId || !onSendAgentMessage) return;
-    const textToSend = collabText.trim() || 'Could you review my current spellcraft module?';
+    const textToSend = collabText.trim() || 'Could you review my current pull request?';
     onSendAgentMessage(agent.paneId, recipientPaneId, textToSend);
 
     const partner = allAgents.find((a) => a.paneId === recipientPaneId);
@@ -108,9 +108,9 @@ export const AgentDrawer: React.FC<AgentDrawerProps> = ({
         bottom: 0,
         width: '430px',
         maxWidth: '92vw',
-        background: 'linear-gradient(180deg, #0a1b66 0%, #030a33 60%, #01041c 100%)',
-        borderLeft: '2px solid #ffffff',
-        boxShadow: '-8px 0 32px rgba(0,0,0,0.8), inset 2px 0 0 rgba(255,255,255,0.2)',
+        background: 'linear-gradient(180deg, #1e293b 0%, #0f172a 60%, #020617 100%)',
+        borderLeft: '1.5px solid #334155',
+        boxShadow: '-8px 0 32px rgba(0,0,0,0.6)',
         padding: '20px',
         color: '#f8fafc',
         display: 'flex',
@@ -121,7 +121,7 @@ export const AgentDrawer: React.FC<AgentDrawerProps> = ({
         overflowY: 'auto',
       }}
     >
-      {/* Header Styled like Classic Final Fantasy Window */}
+      {/* Header Styled like Modern Tech Drawer */}
       <div
         style={{
           display: 'flex',
@@ -129,8 +129,8 @@ export const AgentDrawer: React.FC<AgentDrawerProps> = ({
           alignItems: 'center',
           background: 'rgba(255,255,255,0.06)',
           padding: '8px 12px',
-          borderRadius: '4px',
-          border: '1px solid rgba(255,255,255,0.3)',
+          borderRadius: '6px',
+          border: '1px solid rgba(255,255,255,0.1)',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -191,7 +191,7 @@ export const AgentDrawer: React.FC<AgentDrawerProps> = ({
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#fbbf24', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-            📜 Assigned Quest / User Prompt
+            📋 Assigned Task / User Prompt
           </span>
           {agent.currentPrompt && (
             <button
@@ -231,7 +231,7 @@ export const AgentDrawer: React.FC<AgentDrawerProps> = ({
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: '6px', marginTop: '2px' }}>
             <span style={{ fontSize: '0.85rem' }}>✨</span>
             <div style={{ fontSize: '0.8rem', color: '#67e8f9', lineHeight: 1.4 }}>
-              <strong>Channeling:</strong> {agent.currentTask}
+              <strong>Working on:</strong> {agent.currentTask}
             </div>
           </div>
         )}
@@ -261,14 +261,14 @@ export const AgentDrawer: React.FC<AgentDrawerProps> = ({
             padding: '8px 12px',
             background: activeTab === 'collab' ? 'rgba(255, 255, 255, 0.15)' : 'transparent',
             border: 'none',
-            borderBottom: activeTab === 'collab' ? '2.5px solid #fbbf24' : '2.5px solid transparent',
+            borderBottom: activeTab === 'collab' ? '2.5px solid #38bdf8' : '2.5px solid transparent',
             color: activeTab === 'collab' ? '#ffffff' : '#94a3b8',
             fontWeight: 700,
             fontSize: '0.82rem',
             cursor: 'pointer',
           }}
         >
-          💬 Talk to Colleague
+          💬 Delegate & Sync
         </button>
 
         <button
@@ -416,12 +416,12 @@ export const AgentDrawer: React.FC<AgentDrawerProps> = ({
         </div>
       )}
 
-      {/* TAB 2: TALK TO COLLEAGUE AGENT (Walk & Deliver Message) */}
+      {/* TAB 2: DELEGATE & SYNC WITH COLLEAGUE AGENT */}
       {activeTab === 'collab' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           <div>
             <label style={{ display: 'block', fontSize: '0.8rem', color: '#cbd5e1', marginBottom: '6px' }}>
-              Choose Colleague Party Member to Speak With:
+              Choose Colleague Agent to Dispatch Message:
             </label>
             {otherAgents.length === 0 ? (
               <div style={{ fontSize: '0.82rem', color: '#fbbf24', padding: '10px', background: 'rgba(0,0,0,0.3)', borderRadius: '4px' }}>
@@ -435,8 +435,8 @@ export const AgentDrawer: React.FC<AgentDrawerProps> = ({
                   width: '100%',
                   padding: '8px 12px',
                   borderRadius: '4px',
-                  background: '#040d3a',
-                  border: '1.5px solid #ffffff',
+                  background: '#0f172a',
+                  border: '1px solid #334155',
                   color: '#ffffff',
                   fontSize: '0.88rem',
                   fontWeight: 600,
@@ -453,19 +453,19 @@ export const AgentDrawer: React.FC<AgentDrawerProps> = ({
 
           <div>
             <label style={{ display: 'block', fontSize: '0.8rem', color: '#cbd5e1', marginBottom: '6px' }}>
-              Message / Dialogue to Deliver:
+              Real Prompt / Task to Deliver to Colleague:
             </label>
             <input
               type="text"
               value={collabText}
               onChange={(e) => setCollabText(e.target.value)}
-              placeholder="e.g. Could you review the latest diff, or run tests?"
+              placeholder="e.g. Can you review the latest diff, or run tests?"
               style={{
                 width: '100%',
                 padding: '9px 12px',
                 borderRadius: '4px',
                 background: 'rgba(0, 0, 0, 0.5)',
-                border: '1px solid rgba(255, 255, 255, 0.3)',
+                border: '1px solid rgba(255, 255, 255, 0.2)',
                 color: '#ffffff',
                 fontSize: '0.85rem',
                 boxSizing: 'border-box',
@@ -476,12 +476,12 @@ export const AgentDrawer: React.FC<AgentDrawerProps> = ({
           {/* Quick preset dialogue chips */}
           <div>
             <span style={{ fontSize: '0.72rem', color: '#94a3b8', display: 'block', marginBottom: '6px' }}>
-              Quick Collaboration Presets:
+              Quick Delegation Presets:
             </span>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
               {[
                 'Can you inspect my recent commits and run tests?',
-                'All spellcraft runes verified! Ready to ship.',
+                'All unit tests pass! Ready to deploy.',
                 'Let us coordinate our tasks for the next release.',
               ].map((preset) => (
                 <button
@@ -513,8 +513,8 @@ export const AgentDrawer: React.FC<AgentDrawerProps> = ({
               borderRadius: '4px',
               background: '#2563eb',
               color: '#ffffff',
-              border: '1.5px solid #ffffff',
-              fontWeight: 800,
+              border: 'none',
+              fontWeight: 700,
               fontSize: '0.85rem',
               cursor: recipientPaneId ? 'pointer' : 'not-allowed',
               display: 'flex',
@@ -522,11 +522,11 @@ export const AgentDrawer: React.FC<AgentDrawerProps> = ({
               justifyContent: 'center',
               gap: '8px',
               marginTop: '4px',
-              boxShadow: '0 4px 12px rgba(37, 99, 235, 0.5)',
+              boxShadow: '0 4px 12px rgba(37, 99, 235, 0.4)',
             }}
           >
             <span>🚶</span>
-            <span>Walk & Speak With Colleague</span>
+            <span>Dispatch & Deliver via Herdr</span>
           </button>
 
           {msgSentNotice && (
@@ -534,13 +534,13 @@ export const AgentDrawer: React.FC<AgentDrawerProps> = ({
               style={{
                 padding: '8px 12px',
                 borderRadius: '4px',
-                background: 'rgba(56, 189, 248, 0.2)',
-                color: '#67e8f9',
+                background: 'rgba(16, 185, 129, 0.15)',
+                color: '#34d399',
                 fontSize: '0.78rem',
-                border: '1px solid #38bdf8',
+                border: '1px solid rgba(16, 185, 129, 0.3)',
               }}
             >
-              {msgSentNotice}
+              ✓ {msgSentNotice}
             </div>
           )}
         </div>

@@ -1,4 +1,5 @@
 export type AgentStatus = 'idle' | 'working' | 'blocked' | 'done' | 'unknown';
+export type HerdrAgentStatus = AgentStatus;
 
 export interface HerdrAgent {
   paneId: string;
@@ -15,6 +16,45 @@ export interface HerdrAgent {
   currentTask?: string;
   recentOutput?: string;
   updatedAt: number;
+}
+
+export interface AgentMessagePayload {
+  fromPaneId: string;
+  toPaneId: string;
+  message: string;
+  taskType?: 'delegate' | 'query' | 'sync';
+}
+
+export interface AgentMessageEvent {
+  id: string;
+  timestamp: number;
+  fromPaneId: string;
+  fromName: string;
+  toPaneId: string;
+  toName: string;
+  message: string;
+  status: 'delivered' | 'failed';
+}
+
+export interface WorkspaceSyncRequest {
+  goal?: string;
+  action?: 'standup' | 'broadcast' | 'sync_status';
+}
+
+export interface AgentSyncInfo {
+  paneId: string;
+  name: string;
+  status: HerdrAgentStatus;
+  currentTask?: string;
+  lastOutputSummary?: string;
+  blockedReason?: string;
+}
+
+export interface WorkspaceSyncReport {
+  timestamp: number;
+  activeGoal?: string;
+  meetingActive: boolean;
+  agents: AgentSyncInfo[];
 }
 
 export type ServerMessage =
@@ -59,6 +99,26 @@ export type ServerMessage =
       paneId: string;
       output: string;
       timestamp: number;
+    }
+  | {
+      type: 'agent_message';
+      event: AgentMessageEvent;
+      timestamp: number;
+    }
+  | {
+      type: 'agent_message_delivered';
+      event: AgentMessageEvent;
+      timestamp: number;
+    }
+  | {
+      type: 'workspace_sync_report';
+      report: WorkspaceSyncReport;
+      timestamp: number;
+    }
+  | {
+      type: 'sync_report';
+      report: WorkspaceSyncReport;
+      timestamp: number;
     };
 
 export type ClientMessage =
@@ -73,4 +133,9 @@ export type ClientMessage =
       initialPrompt?: string;
       cwd?: string;
     }
-  | { type: 'get_agent_output'; paneId: string };
+  | { type: 'get_agent_output'; paneId: string }
+  | { type: 'send_agent_message'; payload: AgentMessagePayload }
+  | { type: 'agent_message'; payload: AgentMessagePayload }
+  | { type: 'sync_workspace'; request?: WorkspaceSyncRequest }
+  | { type: 'workspace_sync'; request?: WorkspaceSyncRequest };
+

@@ -4,7 +4,12 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { WebSocket, WebSocketServer } from 'ws';
 import { HerdrConnector } from './herdrConnector.js';
-import type { ClientMessage, ServerMessage } from './types.js';
+import type {
+  AgentMessagePayload,
+  ClientMessage,
+  ServerMessage,
+  WorkspaceSyncRequest,
+} from './types.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -24,9 +29,105 @@ const MIME_TYPES: Record<string, string> = {
   '.ico': 'image/x-icon',
 };
 
+function parseJsonBody<T = any>(req: http.IncomingMessage): Promise<T> {
+  return new Promise((resolve, reject) => {
+    let body = '';
+    req.on('data', (chunk) => {
+      body += chunk;
+      if (body.length > 5 * 1024 * 1024) {
+        req.destroy();
+        reject(new Error('Payload too large'));
+      }
+    });
+    req.on('end', () => {
+      try {
+        resolve(body.trim() ? JSON.parse(body) : ({} as T));
+      } catch (e) {
+        reject(new Error('Invalid JSON'));
+      }
+    });
+    req.on('error', reject);
+  });
+}
+
 // Create HTTP server that can serve built client or redirect to Vite dev server
-const httpServer = http.createServer((req, res) => {
+const httpServer = http.createServer(async (req, res) => {
   const urlPath = req.url?.split('?')[0] || '/';
+
+  // Set CORS headers
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  if (req.method === 'OPTIONS') {
+    res.writeHead(204);
+    res.end();
+    return;
+  }
+
+  // REST API: POST /api/messages or /api/message
+  if (req.method === 'POST' && (urlPath === '/api/messages' || urlPath === '/api/message')) {
+    try {
+      const payload = await parseJsonBody<AgentMessagePayload>(req);
+      if (!payload || !payload.toPaneId || !payload.message) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Missing toPaneId or message in payload' }));
+        return;
+      }
+      const event = await connector.sendAgentMessage(payload);
+      broadcast({
+        type: 'agent_message',
+        event,
+        timestamp: Date.now(),
+      });
+      broadcast({
+        type: 'agent_message_delivered',
+        event,
+        timestamp: Date.now(),
+      });
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(event));
+    } catch (err) {
+      console.error('[herdr-office-server] Error in /api/messages:', err);
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: err instanceof Error ? err.message : String(err) }));
+    }
+    return;
+  }
+
+  // REST API: POST /api/sync
+  if (req.method === 'POST' && urlPath === '/api/sync') {
+    try {
+      const body = await parseJsonBody<WorkspaceSyncRequest>(req);
+      const report = await connector.syncWorkspace(body);
+      broadcast({
+        type: 'workspace_sync_report',
+        report,
+        timestamp: Date.now(),
+      });
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(report));
+    } catch (err) {
+      console.error('[herdr-office-server] Error in POST /api/sync:', err);
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: err instanceof Error ? err.message : String(err) }));
+    }
+    return;
+  }
+
+  // REST API: GET /api/sync
+  if (req.method === 'GET' && urlPath === '/api/sync') {
+    try {
+      const report = connector.getWorkspaceSyncReport() || (await connector.syncWorkspace());
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(report));
+    } catch (err) {
+      console.error('[herdr-office-server] Error in GET /api/sync:', err);
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: err instanceof Error ? err.message : String(err) }));
+    }
+    return;
+  }
 
   if (fs.existsSync(clientDistPath)) {
     let filePath = path.join(clientDistPath, urlPath === '/' ? 'index.html' : urlPath);
@@ -125,6 +226,22 @@ connector.on('connection_change', ({ connected, error }) => {
   });
 });
 
+connector.on('agent_message', (event) => {
+  broadcast({
+    type: 'agent_message',
+    event,
+    timestamp: Date.now(),
+  });
+});
+
+connector.on('workspace_sync', (report) => {
+  broadcast({
+    type: 'workspace_sync_report',
+    report,
+    timestamp: Date.now(),
+  });
+});
+
 // Client connections
 wss.on('connection', (ws) => {
   console.log('[herdr-office-server] Client connected to WebSocket');
@@ -136,6 +253,17 @@ wss.on('connection', (ws) => {
     timestamp: Date.now(),
   };
   ws.send(JSON.stringify(initialStateMsg));
+
+  const initialSyncReport = connector.getWorkspaceSyncReport();
+  if (initialSyncReport) {
+    ws.send(
+      JSON.stringify({
+        type: 'workspace_sync_report',
+        report: initialSyncReport,
+        timestamp: Date.now(),
+      })
+    );
+  }
 
   ws.on('message', async (raw) => {
     try {
@@ -201,6 +329,25 @@ wss.on('connection', (ws) => {
             })
           );
         }
+      } else if (msg.type === 'agent_message' || msg.type === 'send_agent_message') {
+        const event = await connector.sendAgentMessage(msg.payload);
+        broadcast({
+          type: 'agent_message',
+          event,
+          timestamp: Date.now(),
+        });
+        broadcast({
+          type: 'agent_message_delivered',
+          event,
+          timestamp: Date.now(),
+        });
+      } else if (msg.type === 'sync_workspace' || msg.type === 'workspace_sync') {
+        const report = await connector.syncWorkspace(msg.request);
+        broadcast({
+          type: 'workspace_sync_report',
+          report,
+          timestamp: Date.now(),
+        });
       }
     } catch (err) {
       console.error('[herdr-office-server] Error processing client message:', err);
@@ -219,3 +366,5 @@ httpServer.listen(port, () => {
   console.log(`[herdr-office-server] Server listening at http://localhost:${port}`);
   console.log(`[herdr-office-server] WebSocket endpoint: ws://localhost:${port}`);
 });
+
+export { httpServer, wss, connector, broadcast };

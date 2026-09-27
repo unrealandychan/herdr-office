@@ -1,5 +1,13 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import type { ClientMessage, HerdrAgent, ServerMessage } from '../types';
+import type {
+  AgentMessageEvent,
+  AgentMessagePayload,
+  ClientMessage,
+  HerdrAgent,
+  ServerMessage,
+  WorkspaceSyncReport,
+  WorkspaceSyncRequest,
+} from '../types';
 
 export interface UseHerdrWebSocketReturn {
   agents: HerdrAgent[];
@@ -12,6 +20,10 @@ export interface UseHerdrWebSocketReturn {
   interruptAgent: (paneId: string) => void;
   spawnAgent: (data: { name?: string; kind?: string; initialPrompt?: string; cwd?: string }) => void;
   fetchAgentOutput: (paneId: string) => void;
+  sendAgentMessage: (payload: AgentMessagePayload) => void;
+  syncWorkspace: (request?: WorkspaceSyncRequest) => void;
+  syncReport: WorkspaceSyncReport | null;
+  recentMessages: AgentMessageEvent[];
   agentOutputs: Record<string, string>;
   promptResult: { paneId: string; success: boolean; message?: string } | null;
   spawnResult: { success: boolean; paneId?: string; name?: string; error?: string } | null;
@@ -26,6 +38,8 @@ export function useHerdrWebSocket(url = 'ws://localhost:4000'): UseHerdrWebSocke
   const [agentOutputs, setAgentOutputs] = useState<Record<string, string>>({});
   const [promptResult, setPromptResult] = useState<{ paneId: string; success: boolean; message?: string } | null>(null);
   const [spawnResult, setSpawnResult] = useState<{ success: boolean; paneId?: string; name?: string; error?: string } | null>(null);
+  const [syncReport, setSyncReport] = useState<WorkspaceSyncReport | null>(null);
+  const [recentMessages, setRecentMessages] = useState<AgentMessageEvent[]>([]);
 
   const wsRef = useRef<WebSocket | null>(null);
 
@@ -57,6 +71,14 @@ export function useHerdrWebSocket(url = 'ws://localhost:4000'): UseHerdrWebSocke
 
   const fetchAgentOutput = useCallback((paneId: string) => {
     sendMessage({ type: 'get_agent_output', paneId });
+  }, [sendMessage]);
+
+  const sendAgentMessage = useCallback((payload: AgentMessagePayload) => {
+    sendMessage({ type: 'send_agent_message', payload });
+  }, [sendMessage]);
+
+  const syncWorkspace = useCallback((request?: WorkspaceSyncRequest) => {
+    sendMessage({ type: 'sync_workspace', request });
   }, [sendMessage]);
 
   const clearResults = useCallback(() => {
@@ -118,6 +140,10 @@ export function useHerdrWebSocket(url = 'ws://localhost:4000'): UseHerdrWebSocke
                 ...prev,
                 [data.paneId]: data.output,
               }));
+            } else if (data.type === 'agent_message' || data.type === 'agent_message_delivered') {
+              setRecentMessages((prev) => [data.event, ...prev.slice(0, 49)]);
+            } else if (data.type === 'workspace_sync_report' || data.type === 'sync_report') {
+              setSyncReport(data.report);
             }
           } catch (e) {
             console.error('Failed to parse WebSocket message:', e);
@@ -161,6 +187,10 @@ export function useHerdrWebSocket(url = 'ws://localhost:4000'): UseHerdrWebSocke
     interruptAgent,
     spawnAgent,
     fetchAgentOutput,
+    sendAgentMessage,
+    syncWorkspace,
+    syncReport,
+    recentMessages,
     agentOutputs,
     promptResult,
     spawnResult,
