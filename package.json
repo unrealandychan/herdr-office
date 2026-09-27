@@ -12,10 +12,13 @@
     "dev:server": "npm run dev -w server",
     "dev:client": "npm run dev -w client",
     "build": "npm run build -w client && npm run build -w server",
+    "art:generate": "tsx scripts/generate-art.ts",
     "start": "node server/dist/index.js",
     "test": "npm run test -w server && npm run test -w client"
   },
   "devDependencies": {
-    "concurrently": "^9.1.2"
+    "@types/pngjs": "^6.0.5",
+    "concurrently": "^9.1.2",
+    "pngjs": "^7.0.0"
   }
 }

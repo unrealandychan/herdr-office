@@ -1,0 +1,166 @@
+{
+  "name": "herdr-office-core-art",
+  "version": "1.0.0",
+  "tileSize": 16,
+  "tileset": {
+    "path": "/assets/tiles/office_tiles.png",
+    "width": 128,
+    "height": 64,
+    "tiles": {
+      "floor_wood": {
+        "x": 0,
+        "y": 0,
+        "w": 16,
+        "h": 16
+      },
+      "floor_carpet": {
+        "x": 16,
+        "y": 0,
+        "w": 16,
+        "h": 16
+      },
+      "floor_tile": {
+        "x": 32,
+        "y": 0,
+        "w": 16,
+        "h": 16
+      },
+      "wall_top": {
+        "x": 48,
+        "y": 0,
+        "w": 16,
+        "h": 24
+      },
+      "wall_window": {
+        "x": 64,
+        "y": 0,
+        "w": 16,
+        "h": 24
+      },
+      "desk": {
+        "x": 80,
+        "y": 0,
+        "w": 32,
+        "h": 24
+      },
+      "chair": {
+        "x": 0,
+        "y": 32,
+        "w": 16,
+        "h": 16
+      },
+      "plant": {
+        "x": 16,
+        "y": 32,
+        "w": 16,
+        "h": 24
+      },
+      "water_cooler": {
+        "x": 32,
+        "y": 32,
+        "w": 16,
+        "h": 24
+      },
+      "bubble_blocked": {
+        "x": 48,
+        "y": 32,
+        "w": 16,
+        "h": 16
+      },
+      "bubble_done": {
+        "x": 64,
+        "y": 32,
+        "w": 16,
+        "h": 16
+      }
+    }
+  },
+  "characters": {
+    "frameWidth": 16,
+    "frameHeight": 24,
+    "variants": {
+      "pi": "/assets/characters/character_pi.png",
+      "claude": "/assets/characters/character_claude.png",
+      "codex": "/assets/characters/character_codex.png",
+      "default": "/assets/characters/character_pi.png"
+    },
+    "animations": {
+      "idle_down": {
+        "row": 0,
+        "frames": [
+          0,
+          1
+        ],
+        "frameRate": 2
+      },
+      "idle_up": {
+        "row": 1,
+        "frames": [
+          0,
+          1
+        ],
+        "frameRate": 2
+      },
+      "walk_down": {
+        "row": 2,
+        "frames": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "frameRate": 6
+      },
+      "walk_up": {
+        "row": 3,
+        "frames": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "frameRate": 6
+      },
+      "walk_side": {
+        "row": 4,
+        "frames": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "frameRate": 6
+      },
+      "type_up": {
+        "row": 5,
+        "frames": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "frameRate": 8
+      },
+      "alert": {
+        "row": 6,
+        "frames": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "frameRate": 4
+      },
+      "done": {
+        "row": 7,
+        "frames": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "frameRate": 4
+      }
+    }
+  }
+}
