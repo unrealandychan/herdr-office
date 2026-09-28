@@ -17,6 +17,7 @@ export const OfficeView: React.FC = () => {
   const [spawnRequestedAt, setSpawnRequestedAt] = useState<number | null>(null);
   const [recentSpeech, setRecentSpeech] = useState<{ from: string; to: string; text: string } | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<'all' | 'working' | 'idle' | 'blocked' | 'done'>('all');
 
   const {
     agents,
@@ -148,6 +149,28 @@ export const OfficeView: React.FC = () => {
     syncWorkspace({ action: 'broadcast', goal });
   };
 
+  const handleCoffeeBreak = () => {
+    if (engineRef.current) {
+      engineRef.current.sendAgentToCoffee(selectedPaneId || undefined);
+    }
+  };
+
+  const handleReturnToDesks = () => {
+    if (engineRef.current) {
+      engineRef.current.returnAllToDesks();
+    }
+  };
+
+  const workingCount = agents.filter((a) => a.status === 'working').length;
+  const idleCount = agents.filter((a) => a.status === 'idle').length;
+  const blockedCount = agents.filter((a) => a.status === 'blocked').length;
+  const doneCount = agents.filter((a) => a.status === 'done').length;
+
+  const filteredAgents = agents.filter((a) => {
+    if (statusFilter === 'all') return true;
+    return a.status === statusFilter;
+  });
+
   if (loadError) {
     return (
       <div style={{ padding: '40px', color: '#ef4444', textAlign: 'center' }}>
@@ -227,9 +250,39 @@ export const OfficeView: React.FC = () => {
           </span>
         </div>
 
-        {/* Quick Party Member Task Bar */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflowX: 'auto', maxWidth: '45vw', padding: '2px 4px' }}>
-          {agents.map((a) => {
+        {/* Quick Party Member Task Bar with Live Status Filter */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', overflowX: 'auto', maxWidth: '42vw', padding: '2px 4px' }}>
+          {/* Status Filter Badges */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '3px', marginRight: '6px', paddingRight: '6px', borderRight: '1px solid rgba(255,255,255,0.15)' }}>
+            {(
+              [
+                { id: 'all', label: `All (${agents.length})`, color: '#94a3b8' },
+                { id: 'working', label: `⚡ (${workingCount})`, color: '#34d399' },
+                { id: 'idle', label: `☕ (${idleCount})`, color: '#60a5fa' },
+                ...(blockedCount > 0 ? [{ id: 'blocked', label: `⚠️ (${blockedCount})`, color: '#ef4444' }] : []),
+                ...(doneCount > 0 ? [{ id: 'done', label: `✨ (${doneCount})`, color: '#fbbf24' }] : []),
+              ] as const
+            ).map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setStatusFilter(tab.id as 'all' | 'working' | 'idle' | 'blocked' | 'done')}
+                style={{
+                  padding: '2px 6px',
+                  borderRadius: '3px',
+                  fontSize: '0.68rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  border: `1px solid ${statusFilter === tab.id ? tab.color : 'rgba(255,255,255,0.15)'}`,
+                  background: statusFilter === tab.id ? 'rgba(255,255,255,0.12)' : 'transparent',
+                  color: statusFilter === tab.id ? tab.color : '#94a3b8',
+                }}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          {filteredAgents.map((a) => {
             const isSelected = a.paneId === selectedPaneId;
             const statusColor =
               a.status === 'working'
@@ -280,48 +333,90 @@ export const OfficeView: React.FC = () => {
           })}
         </div>
 
-        {/* Controls: Standup / Sync All, Spawn Agent, Scale, Refresh */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        {/* Controls: Standup / Coffee / Desks / Spawn Agent, Scale, Refresh */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <button
-            onClick={handleOpenStandup}
+            onClick={handleCoffeeBreak}
+            title="Send agent for a coffee break"
             style={{
-              padding: '6px 14px',
+              padding: '6px 11px',
               borderRadius: '4px',
-              background: 'linear-gradient(180deg, #059669 0%, #047857 100%)',
-              color: '#ffffff',
-              border: '1px solid #10b981',
-              fontSize: '0.8rem',
+              background: 'rgba(245, 158, 11, 0.15)',
+              color: '#fbbf24',
+              border: '1px solid #f59e0b',
+              fontSize: '0.76rem',
               fontWeight: 800,
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              gap: '6px',
+              gap: '4px',
+            }}
+          >
+            <span>☕</span>
+            <span>Coffee</span>
+          </button>
+
+          <button
+            onClick={handleReturnToDesks}
+            title="Command all agents to return to their desks"
+            style={{
+              padding: '6px 11px',
+              borderRadius: '4px',
+              background: 'rgba(56, 189, 248, 0.15)',
+              color: '#38bdf8',
+              border: '1px solid #0284c7',
+              fontSize: '0.76rem',
+              fontWeight: 800,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+            }}
+          >
+            <span>🎯</span>
+            <span>Desks</span>
+          </button>
+
+          <button
+            onClick={handleOpenStandup}
+            style={{
+              padding: '6px 12px',
+              borderRadius: '4px',
+              background: 'linear-gradient(180deg, #059669 0%, #047857 100%)',
+              color: '#ffffff',
+              border: '1px solid #10b981',
+              fontSize: '0.76rem',
+              fontWeight: 800,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '5px',
               boxShadow: '0 2px 8px rgba(16, 185, 129, 0.4)',
             }}
           >
             <span>🤝</span>
-            <span>All-Hands Standup</span>
+            <span>Standup</span>
           </button>
 
           <button
             onClick={() => setIsSpawnModalOpen(true)}
             style={{
-              padding: '6px 14px',
+              padding: '6px 12px',
               borderRadius: '4px',
               background: 'linear-gradient(180deg, #2563eb 0%, #1d4ed8 100%)',
               color: '#ffffff',
               border: '1px solid #3b82f6',
-              fontSize: '0.8rem',
+              fontSize: '0.76rem',
               fontWeight: 800,
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              gap: '6px',
+              gap: '5px',
               boxShadow: '0 2px 8px rgba(37, 99, 235, 0.4)',
             }}
           >
             <span>+</span>
-            <span>Spawn Agent</span>
+            <span>Spawn</span>
           </button>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
@@ -364,6 +459,30 @@ export const OfficeView: React.FC = () => {
           </button>
         </div>
       </header>
+
+      {/* Interactive Helper Banner */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '4px 18px',
+          background: 'rgba(15, 23, 42, 0.85)',
+          borderBottom: '1px solid rgba(255,255,255,0.08)',
+          fontSize: '0.72rem',
+          color: '#94a3b8',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+          <span>💡 <strong>Click agent</strong> to select</span>
+          <span>🖱️ <strong>Click floor</strong> to walk selected agent</span>
+          <span>☕ <strong>Click Espresso Bar / Sofa / Boardroom</strong> to interact</span>
+          <span>✋ <strong>Drag & Drop</strong> agents anywhere</span>
+        </div>
+        <div>
+          <span style={{ color: '#38bdf8' }}>{selectedAgent ? `Selected: @${selectedAgent.name || selectedAgent.agent}` : 'Click any agent or desk to focus'}</span>
+        </div>
+      </div>
 
       {/* Main Canvas Viewport */}
       <main

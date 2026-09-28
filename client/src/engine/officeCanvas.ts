@@ -9,6 +9,7 @@ import {
   isoToGrid,
   getStationForIndex,
   type DeskStation,
+  type PointOfInterest,
 } from './officeLayout';
 import { findOfficePath, type PathNode } from './officePathfinding';
 import type { HerdrAgent } from '../types';
@@ -32,6 +33,28 @@ export interface ActiveConversation {
   stageTimer: number;
   meetCol: number;
   meetRow: number;
+}
+
+export interface OfficeParticle {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  alpha: number;
+  maxLife: number;
+  life: number;
+  size: number;
+  color: string;
+  char?: string;
+}
+
+export interface ClickRipple {
+  x: number;
+  y: number;
+  radius: number;
+  maxRadius: number;
+  alpha: number;
+  color: string;
 }
 
 export interface AgentEntity {
@@ -105,6 +128,13 @@ export class OfficeCanvasEngine {
   private dragStartMouse = { x: 0, y: 0 };
   private hasDragged = false;
   private hoveredTile: { col: number; row: number } | null = null;
+  private hoveredPoi: PointOfInterest | null = null;
+
+  // Particle System & Click Effects
+  private particles: OfficeParticle[] = [];
+  private clickRipples: ClickRipple[] = [];
+  private steamTimer = 0;
+  private bubbleTimer = 0;
 
   constructor(options: CanvasEngineOptions) {
     this.canvas = options.canvas;
@@ -151,6 +181,50 @@ export class OfficeCanvasEngine {
     entity.waypoints = findOfficePath(entity.col, entity.row, targetCol, targetRow, entity.station.id);
     entity.waypointIndex = 0;
     entity.state = 'walking';
+  }
+
+  /**
+   * Command an agent (or first available idle agent) to take an espresso break
+   */
+  public sendAgentToCoffee(paneId?: string) {
+    const targetEntity = paneId
+      ? this.entities.get(paneId)
+      : Array.from(this.entities.values()).find((e) => e.agent.status === 'idle') || this.entities.values().next().value;
+
+    if (!targetEntity) return;
+
+    const coffeePoi = OFFICE_POIS.find((p) => p.id === 'coffee');
+    if (!coffeePoi) return;
+
+    const freeSlot = coffeePoi.slots[0];
+    this.setAgentDestination(targetEntity, freeSlot.col, freeSlot.row, 'visiting_poi');
+    targetEntity.assignedPoiSlot = { poiId: coffeePoi.id, col: freeSlot.col, row: freeSlot.row };
+    targetEntity.bubbleText = 'Grabbing an espresso!';
+    targetEntity.bubbleDuration = 3.5;
+
+    const coffeeIso = gridToIso(coffeePoi.col, coffeePoi.row, this.originX, this.originY);
+    this.clickRipples.push({
+      x: coffeeIso.x,
+      y: coffeeIso.y,
+      radius: 8,
+      maxRadius: 36,
+      alpha: 1.0,
+      color: '#fbbf24',
+    });
+  }
+
+  /**
+   * Returns all agents back to their assigned workstation desks
+   */
+  public returnAllToDesks() {
+    this.meetingActive = false;
+    for (const entity of this.entities.values()) {
+      if (entity.state !== 'dragged') {
+        this.setAgentDestination(entity, entity.homeCol, entity.homeRow, 'sitting');
+        entity.bubbleText = 'Back to coding!';
+        entity.bubbleDuration = 2.0;
+      }
+    }
   }
 
   /**
@@ -411,6 +485,83 @@ export class OfficeCanvasEngine {
       }
     }
 
+    // 1.5. Update Particle System & Visual Effects
+    for (let i = this.particles.length - 1; i >= 0; i--) {
+      const p = this.particles[i];
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      p.life += dt;
+      p.alpha = Math.max(0, 1 - p.life / p.maxLife);
+      if (p.life >= p.maxLife) {
+        this.particles.splice(i, 1);
+      }
+    }
+
+    for (let i = this.clickRipples.length - 1; i >= 0; i--) {
+      const r = this.clickRipples[i];
+      r.radius += (r.maxRadius - r.radius) * Math.min(dt * 7, 1);
+      r.alpha -= dt * 2.2;
+      if (r.alpha <= 0 || r.radius >= r.maxRadius - 1) {
+        this.clickRipples.splice(i, 1);
+      }
+    }
+
+    // A. Ambient Steam Particles from Espresso Machine
+    this.steamTimer += dt;
+    if (this.steamTimer >= 0.18) {
+      this.steamTimer = 0;
+      const coffeeIso = gridToIso(13.8, 2.0, this.originX, this.originY);
+      this.particles.push({
+        x: coffeeIso.x - 1 + (Math.random() - 0.5) * 4,
+        y: coffeeIso.y - 42,
+        vx: (Math.random() - 0.5) * 4,
+        vy: -13 - Math.random() * 8,
+        alpha: 0.55,
+        maxLife: 1.3,
+        life: 0,
+        size: 2.5 + Math.random() * 1.5,
+        color: 'rgba(255, 255, 255, 0.5)',
+      });
+    }
+
+    // B. Water Cooler Bubbles
+    this.bubbleTimer += dt;
+    if (this.bubbleTimer >= 0.55) {
+      this.bubbleTimer = 0;
+      const coolerIso = gridToIso(14.8, 3.2, this.originX, this.originY);
+      this.particles.push({
+        x: coolerIso.x - 1 + (Math.random() - 0.5) * 6,
+        y: coolerIso.y - 28,
+        vx: (Math.random() - 0.5) * 2,
+        vy: -10 - Math.random() * 4,
+        alpha: 0.8,
+        maxLife: 0.7,
+        life: 0,
+        size: 1.5,
+        color: 'rgba(186, 230, 253, 0.75)',
+      });
+    }
+
+    // C. Coding Sparks for Working Developers
+    for (const entity of this.entities.values()) {
+      if (entity.agent.status === 'working' && entity.state === 'sitting' && Math.random() < 0.08) {
+        const codeChars = ['{', '}', ';', '/>', '$', 'λ', '0', '1', '⚡'];
+        const ch = codeChars[Math.floor(Math.random() * codeChars.length)];
+        this.particles.push({
+          x: entity.screenX + (Math.random() - 0.5) * 24,
+          y: entity.screenY - 32,
+          vx: (Math.random() - 0.5) * 8,
+          vy: -12 - Math.random() * 10,
+          alpha: 0.85,
+          maxLife: 1.2,
+          life: 0,
+          size: 7,
+          color: Math.random() < 0.5 ? '#38bdf8' : '#34d399',
+          char: ch,
+        });
+      }
+    }
+
     // 2. Anti-Overlap Continuous Separation Force
     // Mathematically guarantees agents never clip or superimpose into a single blob!
     const entityList = Array.from(this.entities.values());
@@ -512,6 +663,16 @@ export class OfficeCanvasEngine {
     return null;
   }
 
+  private getPoiUnderMouse(mx: number, my: number): PointOfInterest | null {
+    for (const poi of OFFICE_POIS) {
+      const iso = gridToIso(poi.col, poi.row, this.originX, this.originY);
+      if (Math.hypot(mx - iso.x, my - (iso.y - 18)) <= 28) {
+        return poi;
+      }
+    }
+    return null;
+  }
+
   private handleMouseDown = (e: MouseEvent) => {
     const rect = this.canvas.getBoundingClientRect();
     const scaleX = this.canvas.width / rect.width;
@@ -576,9 +737,18 @@ export class OfficeCanvasEngine {
     } else {
       // Hover feedback
       const hit = this.getAgentUnderMouse(mx, my);
+      const poiHit = this.getPoiUnderMouse(mx, my);
+      this.hoveredPoi = poiHit;
+
       if (hit) {
         this.hoveredPaneId = hit.agent.paneId;
         this.canvas.style.cursor = 'grab';
+      } else if (poiHit) {
+        this.hoveredPaneId = null;
+        this.canvas.style.cursor = 'pointer';
+      } else if (this.selectedPaneId && this.hoveredTile) {
+        this.hoveredPaneId = null;
+        this.canvas.style.cursor = 'crosshair';
       } else {
         this.hoveredPaneId = null;
         this.canvas.style.cursor = 'default';
@@ -616,14 +786,80 @@ export class OfficeCanvasEngine {
       this.hasDragged = false;
       this.canvas.style.cursor = 'default';
     } else {
-      // Clicked on empty space: deselect
       const rect = this.canvas.getBoundingClientRect();
       const scaleX = this.canvas.width / rect.width;
       const scaleY = this.canvas.height / rect.height;
       const mx = ((e.clientX - rect.left) * scaleX) / this.scale;
       const my = ((e.clientY - rect.top) * scaleY) / this.scale;
+
       const hit = this.getAgentUnderMouse(mx, my);
-      if (!hit) {
+      if (hit) {
+        this.selectedPaneId = hit.agent.paneId;
+        this.onSelectAgent?.(hit.agent);
+
+        // Click selection ripple
+        this.clickRipples.push({
+          x: hit.entity.screenX,
+          y: hit.entity.screenY,
+          radius: 6,
+          maxRadius: 28,
+          alpha: 0.9,
+          color: '#fbbf24',
+        });
+      } else {
+        // If an agent is already selected, click-to-walk to floor or interact with POI!
+        if (this.selectedPaneId) {
+          const selectedEntity = this.entities.get(this.selectedPaneId);
+          if (selectedEntity && selectedEntity.state !== 'dragged') {
+            const poi = this.getPoiUnderMouse(mx, my);
+            if (poi) {
+              const freeSlot = poi.slots[0];
+              this.setAgentDestination(selectedEntity, freeSlot.col, freeSlot.row, 'visiting_poi');
+              selectedEntity.assignedPoiSlot = { poiId: poi.id, col: freeSlot.col, row: freeSlot.row };
+              selectedEntity.bubbleText = `Heading to ${poi.name}!`;
+              selectedEntity.bubbleDuration = 2.5;
+
+              const poiIso = gridToIso(poi.col, poi.row, this.originX, this.originY);
+              this.clickRipples.push({
+                x: poiIso.x,
+                y: poiIso.y,
+                radius: 8,
+                maxRadius: 32,
+                alpha: 1.0,
+                color: '#38bdf8',
+              });
+              return;
+            }
+
+            const gridPos = isoToGrid(mx, my, this.originX, this.originY);
+            if (
+              gridPos.col >= 1 &&
+              gridPos.col < OFFICE_COLS - 1 &&
+              gridPos.row >= 1 &&
+              gridPos.row < OFFICE_ROWS - 1
+            ) {
+              const targetCol = Math.round(gridPos.col * 2) / 2;
+              const targetRow = Math.round(gridPos.row * 2) / 2;
+
+              this.setAgentDestination(selectedEntity, targetCol, targetRow, 'talking');
+              selectedEntity.bubbleText = 'On my way!';
+              selectedEntity.bubbleDuration = 2.0;
+
+              const targetIso = gridToIso(targetCol, targetRow, this.originX, this.originY);
+              this.clickRipples.push({
+                x: targetIso.x,
+                y: targetIso.y,
+                radius: 6,
+                maxRadius: 28,
+                alpha: 1.0,
+                color: '#34d399',
+              });
+              return;
+            }
+          }
+        }
+
+        // Clicked outside: deselect
         this.selectedPaneId = null;
         this.onSelectAgent?.(null);
       }
@@ -973,6 +1209,70 @@ export class OfficeCanvasEngine {
           if (deskTile) {
             ctx.drawImage(tileset, deskTile.x, deskTile.y, deskTile.w, deskTile.h, deskIso.x - 32, deskIso.y - 34, deskTile.w, deskTile.h);
           }
+
+          // Active Animated Screen Glow if Occupied and Working!
+          const occupant = Array.from(this.entities.values()).find(
+            (e) => e.station.id === station.id && e.state === 'sitting'
+          );
+
+          if (occupant && occupant.agent.status === 'working') {
+            ctx.save();
+            // 1. Left Ultrawide IDE Monitor Animation (Screen at deskIso.x - 25, deskIso.y - 17)
+            const ideX = deskIso.x - 25;
+            const ideY = deskIso.y - 17;
+            const screenW = 14;
+            const screenH = 12;
+
+            // Background terminal glow
+            ctx.fillStyle = 'rgba(14, 18, 26, 0.95)';
+            ctx.fillRect(ideX, ideY, screenW, screenH);
+
+            // Active Syntax Code Lines cycling
+            const syntaxPalette = ['#38bdf8', '#34d399', '#c084fc', '#facc15', '#fb923c'];
+            const lineOffset = Math.floor(elapsed / 400) % 4;
+            for (let li = 0; li < 4; li++) {
+              const colIdx = (li + lineOffset) % syntaxPalette.length;
+              ctx.fillStyle = syntaxPalette[colIdx];
+              const lw = 6 + ((li * 3 + lineOffset * 2) % 7);
+              ctx.fillRect(ideX + 2, ideY + 2 + li * 2.5, lw, 1);
+            }
+
+            // Blinking Cyan Cursor
+            if (Math.sin(elapsed / 120) > 0) {
+              ctx.fillStyle = '#38bdf8';
+              ctx.fillRect(ideX + 9, ideY + 2 + (lineOffset % 4) * 2.5, 2, 1);
+            }
+
+            // 2. Right Portrait Terminal Monitor Animation (Screen at deskIso.x + 12, deskIso.y - 20)
+            const termX = deskIso.x + 12;
+            const termY = deskIso.y - 20;
+            const termW = 12;
+            const termH = 15;
+
+            ctx.fillStyle = 'rgba(10, 14, 22, 0.95)';
+            ctx.fillRect(termX, termY, termW, termH);
+
+            // Terminal lines
+            ctx.fillStyle = '#34d399';
+            for (let ti = 0; ti < 5; ti++) {
+              const tw = 4 + ((ti * 2 + Math.floor(elapsed / 600)) % 7);
+              ctx.fillRect(termX + 1.5, termY + 2 + ti * 2.5, tw, 1);
+            }
+
+            // Activity blinker
+            const amberPulse = Math.sin(elapsed / 180) > 0;
+            ctx.fillStyle = amberPulse ? '#fbbf24' : '#34d399';
+            ctx.fillRect(termX + 9, termY + 12, 1.5, 1.5);
+
+            // 3. RGB Gaming PC Tower internal glow under right desk side
+            const pcX = deskIso.x + 15;
+            const pcY = deskIso.y + 12;
+            const hue = (elapsed / 25) % 360;
+            ctx.fillStyle = `hsla(${hue}, 90%, 65%, 0.8)`;
+            ctx.fillRect(pcX, pcY, 3, 2);
+
+            ctx.restore();
+          }
         },
       });
     }
@@ -1129,6 +1429,35 @@ export class OfficeCanvasEngine {
       item.draw();
     }
 
+    // Render Click Target Ripples on Floor
+    for (const r of this.clickRipples) {
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, r.alpha);
+      ctx.strokeStyle = r.color;
+      ctx.lineWidth = 1.8;
+      ctx.beginPath();
+      ctx.ellipse(r.x, r.y, r.radius, r.radius / 2, 0, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // Render Floating Particles (Steam, bubbles, sparks)
+    for (const p of this.particles) {
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, p.alpha);
+      if (p.char) {
+        ctx.font = 'bold 7px monospace';
+        ctx.fillStyle = p.color;
+        ctx.fillText(p.char, p.x, p.y);
+      } else {
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+
     // 6. Atmospheric Lighting & Window Sunlight Beams
     this.renderAtmosphericLighting(elapsed);
 
@@ -1141,10 +1470,14 @@ export class OfficeCanvasEngine {
       // A. Agent Nameplate (always visible right above head)
       this.renderEntityNameplate(entity, entity.screenX, headTopY - 18);
 
-      // B. Mini Task Bubble (for coding agents, placed above nameplate)
+      // B. Mini Task Bubble / Alert Status / Done Status
       if (entity.agent.status === 'working' && !entity.bubbleText) {
         const taskSnippet = entity.agent.currentTask || entity.agent.currentPrompt || 'Coding...';
         this.renderModernMiniTaskBubble(entity.agent.name || entity.agent.agent, taskSnippet, entity.screenX, headTopY - 40, elapsed);
+      } else if (entity.agent.status === 'blocked' && !entity.bubbleText) {
+        this.renderModernAlertBubble(entity.screenX, headTopY - 40, elapsed);
+      } else if (entity.agent.status === 'done' && !entity.bubbleText) {
+        this.renderModernDoneBubble(entity.screenX, headTopY - 40, elapsed);
       }
 
       // C. Active Dialogue Card (for speaking agents, placed above)
@@ -1173,6 +1506,32 @@ export class OfficeCanvasEngine {
           );
         }
       }
+    }
+
+    // 8. Hovered POI Floating Tooltip
+    if (this.hoveredPoi) {
+      const poi = this.hoveredPoi;
+      const iso = gridToIso(poi.col, poi.row, originX, originY);
+      const label = `${poi.name} (Click to interact)`;
+      ctx.save();
+      ctx.font = 'bold 8px monospace';
+      const textW = ctx.measureText(label).width;
+      const boxW = textW + 16;
+      const boxH = 18;
+      const boxX = Math.max(10, Math.min(this.baseWidth - boxW - 10, iso.x - boxW / 2));
+      const boxY = iso.y - 48;
+
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.95)';
+      ctx.beginPath();
+      ctx.roundRect(boxX, boxY, boxW, boxH, 4);
+      ctx.fill();
+      ctx.strokeStyle = '#38bdf8';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      ctx.fillStyle = '#38bdf8';
+      ctx.fillText(label, boxX + 8, boxY + 12);
+      ctx.restore();
     }
 
     ctx.restore();
@@ -1381,6 +1740,67 @@ export class OfficeCanvasEngine {
     ctx.fillStyle = '#e2e8f0';
     ctx.fillText(snippet, boxX + 12, boxY + 11);
 
+    ctx.restore();
+  }
+
+  /**
+   * Renders pulsing alert badge for blocked agents
+   */
+  private renderModernAlertBubble(anchorX: number, anchorY: number, elapsed: number) {
+    const { ctx } = this;
+    const pulse = Math.sin(elapsed / 120) * 0.3 + 0.7;
+    const bob = Math.sin(elapsed / 200) * 1.5;
+
+    ctx.save();
+    ctx.font = 'bold 7.5px monospace';
+    const text = '⚠️ APPROVAL NEEDED';
+    const textW = ctx.measureText(text).width;
+    const boxW = textW + 16;
+    const boxH = 16;
+    const boxX = Math.max(10, Math.min(this.baseWidth - boxW - 10, anchorX - boxW / 2));
+    const boxY = Math.max(8, anchorY + bob);
+
+    ctx.fillStyle = 'rgba(30, 10, 10, 0.95)';
+    ctx.beginPath();
+    ctx.roundRect(boxX, boxY, boxW, boxH, 3);
+    ctx.fill();
+
+    ctx.strokeStyle = `rgba(239, 68, 68, ${pulse})`;
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+
+    ctx.fillStyle = '#f87171';
+    ctx.fillText(text, boxX + 8, boxY + 11);
+    ctx.restore();
+  }
+
+  /**
+   * Renders celebratory badge for completed agents
+   */
+  private renderModernDoneBubble(anchorX: number, anchorY: number, elapsed: number) {
+    const { ctx } = this;
+    const bob = Math.sin(elapsed / 250) * 1.5;
+
+    ctx.save();
+    ctx.font = 'bold 7.5px monospace';
+    const text = '✨ TASK COMPLETED';
+    const textW = ctx.measureText(text).width;
+    const boxW = textW + 16;
+    const boxH = 16;
+    const boxX = Math.max(10, Math.min(this.baseWidth - boxW - 10, anchorX - boxW / 2));
+    const boxY = Math.max(8, anchorY + bob);
+
+    ctx.fillStyle = 'rgba(15, 23, 42, 0.95)';
+    ctx.beginPath();
+    ctx.roundRect(boxX, boxY, boxW, boxH, 3);
+    ctx.fill();
+
+    ctx.strokeStyle = '#fbbf24';
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+
+    ctx.fillStyle = '#fbbf24';
+    ctx.fillText(text, boxX + 8, boxY + 11);
     ctx.restore();
   }
 
