@@ -32,31 +32,19 @@ export function isoToGrid(screenX: number, screenY: number, originX: number, ori
   return { col, row };
 }
 
-// 12 Spacious Modern Workstation Pods (All arranged on navy carpet pods with spacious aisles)
+// 8 Spacious Modern Workstation Pods (Organized in 2 collaborative 4-person team benches)
 export const DESK_STATIONS: DeskStation[] = [
-  // West Pod - North
-  { id: 'desk-1', name: 'Dev Station 1', deskCol: 3.5, deskRow: 3.0 },
-  { id: 'desk-2', name: 'Dev Station 2', deskCol: 5.5, deskRow: 3.0 },
+  // Team Alpha (AI & Core Eng - North Pod)
+  { id: 'desk-1', name: 'Core Eng 1', deskCol: 3.5, deskRow: 3.5 },
+  { id: 'desk-2', name: 'Core Eng 2', deskCol: 5.0, deskRow: 3.5 },
+  { id: 'desk-3', name: 'AI Research 1', deskCol: 7.5, deskRow: 3.5 },
+  { id: 'desk-4', name: 'AI Research 2', deskCol: 9.0, deskRow: 3.5 },
 
-  // West Pod - Mid
-  { id: 'desk-3', name: 'Dev Station 3', deskCol: 3.5, deskRow: 6.0 },
-  { id: 'desk-4', name: 'Dev Station 4', deskCol: 5.5, deskRow: 6.0 },
-
-  // West Pod - South
-  { id: 'desk-5', name: 'Dev Station 5', deskCol: 3.5, deskRow: 9.0 },
-  { id: 'desk-6', name: 'Dev Station 6', deskCol: 5.5, deskRow: 9.0 },
-
-  // East Pod - North
-  { id: 'desk-7', name: 'Dev Station 7', deskCol: 8.0, deskRow: 3.0 },
-  { id: 'desk-8', name: 'Dev Station 8', deskCol: 10.0, deskRow: 3.0 },
-
-  // East Pod - Mid
-  { id: 'desk-9', name: 'Dev Station 9', deskCol: 8.0, deskRow: 6.0 },
-  { id: 'desk-10', name: 'Dev Station 10', deskCol: 10.0, deskRow: 6.0 },
-
-  // East Pod - South
-  { id: 'desk-11', name: 'Dev Station 11', deskCol: 8.0, deskRow: 9.0 },
-  { id: 'desk-12', name: 'Dev Station 12', deskCol: 10.0, deskRow: 9.0 },
+  // Team Beta (Fullstack & Design - Mid Pod)
+  { id: 'desk-5', name: 'Fullstack 1', deskCol: 3.5, deskRow: 6.5 },
+  { id: 'desk-6', name: 'Fullstack 2', deskCol: 5.0, deskRow: 6.5 },
+  { id: 'desk-7', name: 'Design & UI 1', deskCol: 7.5, deskRow: 6.5 },
+  { id: 'desk-8', name: 'Design & UI 2', deskCol: 9.0, deskRow: 6.5 },
 ];
 
 /**
@@ -66,10 +54,10 @@ export function getStationForIndex(index: number): DeskStation {
   if (index < DESK_STATIONS.length) {
     return DESK_STATIONS[index];
   }
-  // Safely generate extra desk spots along perimeter if more than 12 agents
+  // Safely generate extra desk spots if more than 8 agents
   const extraIndex = index - DESK_STATIONS.length;
-  const extraCol = 3.5 + (extraIndex % 4) * 2.0;
-  const extraRow = 11.5 + Math.floor(extraIndex / 4) * 1.5;
+  const extraCol = 3.5 + (extraIndex % 4) * 1.8;
+  const extraRow = 9.5 + Math.floor(extraIndex / 4) * 1.5;
   return {
     id: `desk-extra-${index + 1}`,
     name: `Aux Station ${index + 1}`,
@@ -184,7 +172,7 @@ export function createOfficeMap(): OfficeTile[][] {
       } else if (c >= 11 && r >= 7) {
         // Executive Conference Walnut Parquet Floor
         row.push({ type: 'floor_conference' });
-      } else if (c >= 2 && c <= 10 && r >= 2 && r <= 10) {
+      } else if (c >= 2 && c <= 10 && r >= 2 && r <= 8) {
         // Modern Navy Slate Carpet under Workstation Pods
         row.push({ type: 'floor_carpet' });
       } else {

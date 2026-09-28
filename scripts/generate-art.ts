@@ -120,6 +120,12 @@ const PALETTE = {
   chairChrome: [186, 196, 212, 255] as RGBA,
   chairChromeShadow: [116, 126, 142, 255] as RGBA,
 
+  // Executive Cognac Leather Boardroom Chairs
+  leatherCognacTop: [204, 138, 86, 255] as RGBA,
+  leatherCognacMid: [168, 104, 58, 255] as RGBA,
+  leatherCognacDark: [132, 78, 40, 255] as RGBA,
+  leatherCognacShadow: [96, 52, 26, 255] as RGBA,
+
   // 12. Conference Room Props
   confWoodTop: [176, 120, 78, 255] as RGBA,
   confWoodSide: [132, 84, 50, 255] as RGBA,
@@ -494,29 +500,39 @@ export function generateModernOfficeTileset(): PNG {
   }
 
   // --------------------------------------------------
-  // WALL 1: North-West Window with Panoramic City Skyline (64x96) at [0, 64]
+  // WALL 1: North-West Architectural Skyline Window (64x96) at [0, 64]
   // --------------------------------------------------
   drawIsoWallBase(0, 64, PALETTE.wallDrywallMid);
 
-  // Helper to ensure all window contents remain strictly within the framed aperture
   const isNWWinAperture = (x: number, y: number) => {
-    if (x < 8 || x > 56) return false;
+    if (x < 6 || x > 58) return false;
     const baseY = 64 + 48 + Math.round(x * 0.5);
-    const winTopY = baseY - 46;
+    const winTopY = baseY - 48;
     const winBotY = baseY - 8;
     return y >= winTopY && y <= winBotY;
   };
 
-  // 1. Sky gradient inside window
-  for (let x = 8; x <= 56; x++) {
+  // Full 4-sided architectural frame casing & sky
+  for (let x = 4; x <= 60; x++) {
     const baseY = 64 + 48 + Math.round(x * 0.5);
-    const winTopY = baseY - 46;
+    const winTopY = baseY - 48;
     const winBotY = baseY - 8;
 
-    // Window frame border
-    setPixel(png, x, winTopY - 1, PALETTE.windowFrame);
+    // Extruded outer frame (2px thick top and bottom)
+    setPixel(png, x, winTopY - 2, PALETTE.windowFrame);
+    setPixel(png, x, winTopY - 1, PALETTE.windowFrameHighlight);
     setPixel(png, x, winBotY + 1, PALETTE.windowFrame);
+    setPixel(png, x, winBotY + 2, PALETTE.chairChromeShadow);
 
+    // Left and right vertical frame headers
+    if (x <= 6 || x >= 58) {
+      for (let y = winTopY - 1; y <= winBotY + 1; y++) {
+        setPixel(png, x, y, PALETTE.windowFrame);
+      }
+      continue;
+    }
+
+    // Sky gradient inside aperture
     for (let y = winTopY; y <= winBotY; y++) {
       const t = (y - winTopY) / (winBotY - winTopY);
       const skyCol: RGBA = [
@@ -529,7 +545,7 @@ export function generateModernOfficeTileset(): PNG {
     }
   }
 
-  // 2. Skyscrapers strictly contained within window aperture
+  // Skyscrapers strictly contained within aperture
   for (let x = 12; x <= 22; x++) {
     for (let y = 84; y <= 118; y++) {
       if (isNWWinAperture(x, y)) setPixel(png, x, y, PALETTE.buildingFar);
@@ -546,7 +562,7 @@ export function generateModernOfficeTileset(): PNG {
     }
   }
 
-  // 3. Lit office windows
+  // Lit office windows
   for (let by = 84; by < 122; by += 4) {
     for (let bx = 26; bx <= 36; bx += 3) {
       if (isNWWinAperture(bx, by) && (bx + by) % 3 !== 0) {
@@ -560,10 +576,10 @@ export function generateModernOfficeTileset(): PNG {
     }
   }
 
-  // 4. Architectural Window Mullions (Clean 3-pane division)
-  for (let x = 8; x <= 56; x++) {
+  // Vertical Architectural Mullions (Clean 3-pane division)
+  for (let x = 7; x <= 57; x++) {
     const baseY = 64 + 48 + Math.round(x * 0.5);
-    const winTopY = baseY - 46;
+    const winTopY = baseY - 48;
     const winBotY = baseY - 8;
     if (x === 24 || x === 40) {
       for (let y = winTopY; y <= winBotY; y++) {
@@ -738,21 +754,33 @@ export function generateModernOfficeTileset(): PNG {
 
   const isNEWinAperture = (px: number, y: number) => {
     const rx = px - 448;
-    if (rx < 8 || rx > 56) return false;
+    if (rx < 6 || rx > 58) return false;
     const baseY = 64 + 88 - Math.round(rx * 0.5);
     const winTopY = baseY - 48;
     const winBotY = baseY - 8;
     return y >= winTopY && y <= winBotY;
   };
 
-  for (let rx = 8; rx <= 56; rx++) {
+  // Full 4-sided architectural frame casing & sky
+  for (let rx = 4; rx <= 60; rx++) {
     const baseY = 64 + 88 - Math.round(rx * 0.5);
     const winTopY = baseY - 48;
     const winBotY = baseY - 8;
     const px = 448 + rx;
 
-    setPixel(png, px, winTopY - 1, PALETTE.windowFrame);
+    // Extruded outer frame (2px thick)
+    setPixel(png, px, winTopY - 2, PALETTE.windowFrame);
+    setPixel(png, px, winTopY - 1, PALETTE.windowFrameHighlight);
     setPixel(png, px, winBotY + 1, PALETTE.windowFrame);
+    setPixel(png, px, winBotY + 2, PALETTE.chairChromeShadow);
+
+    // Left and right vertical frame headers
+    if (rx <= 6 || rx >= 58) {
+      for (let y = winTopY - 1; y <= winBotY + 1; y++) {
+        setPixel(png, px, y, PALETTE.windowFrame);
+      }
+      continue;
+    }
 
     for (let y = winTopY; y <= winBotY; y++) {
       const t = (y - winTopY) / (winBotY - winTopY);
@@ -798,7 +826,7 @@ export function generateModernOfficeTileset(): PNG {
   }
 
   // Architectural Window Mullions
-  for (let rx = 8; rx <= 56; rx++) {
+  for (let rx = 7; rx <= 57; rx++) {
     const baseY = 64 + 88 - Math.round(rx * 0.5);
     const winTopY = baseY - 48;
     const winBotY = baseY - 8;
@@ -1032,31 +1060,45 @@ export function generateModernOfficeTileset(): PNG {
   setPixel(png, 47, 289, PALETTE.micPuckGreen);
   setPixel(png, 48, 289, PALETTE.micPuckGreen);
 
-  // Left Laptop open on table
-  fillRect(png, 22, 283, 10, 7, PALETTE.laptopSilver);
-  fillRect(png, 23, 284, 8, 5, PALETTE.monitorScreenBg);
-  fillRect(png, 24, 286, 6, 1, PALETTE.syntaxCyan); // slide chart
-
-  // Right Laptop open on table
-  fillRect(png, 64, 283, 10, 7, PALETTE.laptopSilver);
-  fillRect(png, 65, 284, 8, 5, PALETTE.monitorScreenBg);
-  fillRect(png, 66, 286, 6, 1, PALETTE.syntaxYellow);
+  // Executive closed aluminum folders & water tumblers (No upright glowing computer monitors!)
+  fillRect(png, 22, 284, 12, 6, PALETTE.laptopSilver);
+  fillRect(png, 24, 285, 8, 4, [160, 174, 192, 255]);
+  fillRect(png, 62, 284, 12, 6, PALETTE.laptopSilver);
+  fillRect(png, 64, 285, 8, 4, [160, 174, 192, 255]);
 
   // Water tumblers & notebooks
   fillRect(png, 36, 288, 3, 4, [186, 230, 253, 200]);
   fillRect(png, 56, 288, 5, 4, [225, 29, 72, 255]); // red notebook
 
   // --------------------------------------------------
-  // PROP 9: 2.5D Cantilever Conference Chair (32x48) at [96, 256]
+  // PROP 9: 2.5D Executive Cognac Leather Conference Chair - South-East View (32x48) at [96, 256]
+  // Luxurious leather boardroom chair with curved armrests and 5-star chrome base
   // --------------------------------------------------
   fillIsoDiamond(png, 100, 292, 24, 10, PALETTE.floorShadow);
-  fillRect(png, 104, 292, 16, 2, PALETTE.chairChrome);
-  fillRect(png, 104, 284, 2, 8, PALETTE.chairChrome);
-  fillRect(png, 118, 284, 2, 8, PALETTE.chairChrome);
-  // Mesh seat & backrest
-  fillIsoDiamond(png, 102, 280, 20, 10, PALETTE.chairMeshLight);
-  fillRect(png, 104, 264, 16, 16, PALETTE.chairMeshMid);
-  fillRect(png, 104, 264, 16, 1, PALETTE.chairChrome);
+  // Chrome 5-star swivel base & caster wheels
+  fillRect(png, 110, 292, 4, 6, PALETTE.chairChrome);
+  fillRect(png, 104, 296, 16, 2, PALETTE.chairChrome);
+  setPixel(png, 104, 298, PALETTE.chairMeshDark); // caster
+  setPixel(png, 119, 298, PALETTE.chairMeshDark);
+
+  // Contoured Cognac Leather Seat Cushion
+  fillIsoDiamond(png, 102, 280, 20, 10, PALETTE.leatherCognacMid);
+  fillIsoDiamond(png, 104, 281, 16, 8, PALETTE.leatherCognacTop);
+
+  // Tailored Leather Backrest with curved headrest corners
+  fillRect(png, 105, 264, 14, 16, PALETTE.leatherCognacMid);
+  fillRect(png, 106, 265, 12, 14, PALETTE.leatherCognacTop);
+  // Vertical stitching line
+  fillRect(png, 111, 265, 1, 13, PALETTE.leatherCognacDark);
+  // Chamfered top headrest corners (distinct from a monitor!)
+  setPixel(png, 105, 264, PALETTE.transparent);
+  setPixel(png, 118, 264, PALETTE.transparent);
+
+  // Curved Chrome Armrests on sides
+  fillRect(png, 101, 274, 3, 7, PALETTE.chairChrome);
+  fillRect(png, 101, 274, 5, 2, PALETTE.chairChrome);
+  fillRect(png, 120, 274, 3, 7, PALETTE.chairChrome);
+  fillRect(png, 118, 274, 5, 2, PALETTE.chairChrome);
 
   // --------------------------------------------------
   // PROP 10: 2.5D Modern Breakout Lounge Sofa (64x64) at [128, 256]
@@ -1128,17 +1170,28 @@ export function generateModernOfficeTileset(): PNG {
   setPixel(png, 280, 278, PALETTE.goldStar);
 
   // --------------------------------------------------
-  // PROP 14: 2.5D Conference Chair - Rear Facing View (32x48) at [304, 256]
+  // PROP 14: 2.5D Executive Cognac Leather Conference Chair - Rear Facing View (32x48) at [304, 256]
   // (View from behind, for chairs on the front side of conference table)
   // --------------------------------------------------
   fillIsoDiamond(png, 308, 292, 24, 10, PALETTE.floorShadow);
-  fillRect(png, 312, 292, 16, 2, PALETTE.chairChrome);
-  fillRect(png, 312, 284, 2, 8, PALETTE.chairChrome);
-  fillRect(png, 326, 284, 2, 8, PALETTE.chairChrome);
-  // High backrest facing camera
-  fillRect(png, 312, 270, 16, 18, PALETTE.chairMeshDark);
-  fillRect(png, 314, 272, 12, 14, PALETTE.chairMeshMid);
-  fillRect(png, 312, 270, 16, 1, PALETTE.chairChrome);
+  // Chrome 5-star swivel base & casters
+  fillRect(png, 318, 292, 4, 6, PALETTE.chairChrome);
+  fillRect(png, 312, 296, 16, 2, PALETTE.chairChrome);
+  setPixel(png, 312, 298, PALETTE.chairMeshDark);
+  setPixel(png, 327, 298, PALETTE.chairMeshDark);
+
+  // Rear Cognac Leather Backrest with curved shoulders
+  fillRect(png, 312, 266, 16, 18, PALETTE.leatherCognacMid);
+  fillRect(png, 314, 268, 12, 14, PALETTE.leatherCognacDark);
+  // Lumbar support strap
+  fillRect(png, 312, 276, 16, 2, PALETTE.leatherCognacShadow);
+  // Chamfered top shoulders
+  setPixel(png, 312, 266, PALETTE.transparent);
+  setPixel(png, 327, 266, PALETTE.transparent);
+
+  // Curved chrome armrests extending forward
+  fillRect(png, 309, 275, 3, 8, PALETTE.chairChrome);
+  fillRect(png, 328, 275, 3, 8, PALETTE.chairChrome);
 
   return png;
 }

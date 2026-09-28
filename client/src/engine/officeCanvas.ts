@@ -10,6 +10,7 @@ import {
   getStationForIndex,
   type DeskStation,
 } from './officeLayout';
+import { findOfficePath, type PathNode } from './officePathfinding';
 import type { HerdrAgent } from '../types';
 
 export interface CanvasEngineOptions {
@@ -40,6 +41,8 @@ export interface AgentEntity {
   row: number;
   targetCol: number;
   targetRow: number;
+  waypoints?: PathNode[];
+  waypointIndex?: number;
   homeCol: number;
   homeRow: number;
   screenX: number;
@@ -55,20 +58,21 @@ export interface AgentEntity {
   assignedPoiSlot?: { poiId: string; col: number; row: number };
 }
 
-// 12 Distinct Seats around the Executive Conference Suite (Neatly framing the table)
+// 8 Distinct Executive Boardroom Seats around Conference Table (Neatly tucked, not cluttered)
 const CONF_MEETING_SEATS = [
-  { col: 12.2, row: 8.7, dir: 'se' as const },
-  { col: 13.0, row: 8.7, dir: 'se' as const },
-  { col: 13.8, row: 8.7, dir: 'se' as const },
-  { col: 12.2, row: 10.3, dir: 'ne' as const },
-  { col: 13.0, row: 10.3, dir: 'ne' as const },
-  { col: 13.8, row: 10.3, dir: 'ne' as const },
-  { col: 11.5, row: 9.5, dir: 'se' as const },
-  { col: 14.5, row: 9.5, dir: 'sw' as const },
-  { col: 11.6, row: 8.8, dir: 'se' as const },
-  { col: 14.4, row: 8.8, dir: 'sw' as const },
-  { col: 11.6, row: 10.2, dir: 'ne' as const },
-  { col: 14.4, row: 10.2, dir: 'ne' as const },
+  // Far side (NW) - tucked under table, facing into meeting
+  { col: 12.3, row: 8.8, dir: 'se' as const },
+  { col: 13.0, row: 8.8, dir: 'se' as const },
+  { col: 13.7, row: 8.8, dir: 'se' as const },
+
+  // Near side (SE) - tucked under table, facing into meeting
+  { col: 12.3, row: 10.2, dir: 'ne' as const },
+  { col: 13.0, row: 10.2, dir: 'ne' as const },
+  { col: 13.7, row: 10.2, dir: 'ne' as const },
+
+  // Head and foot of table
+  { col: 11.6, row: 9.5, dir: 'se' as const },
+  { col: 14.4, row: 9.5, dir: 'sw' as const },
 ];
 
 export class OfficeCanvasEngine {
@@ -134,6 +138,22 @@ export class OfficeCanvasEngine {
   }
 
   /**
+   * Plans collision-free path around tables, desks, and office obstacles
+   */
+  private setAgentDestination(
+    entity: AgentEntity,
+    targetCol: number,
+    targetRow: number,
+    _nextState: 'sitting' | 'talking' | 'visiting_poi' | 'walking' = 'sitting'
+  ) {
+    entity.targetCol = targetCol;
+    entity.targetRow = targetRow;
+    entity.waypoints = findOfficePath(entity.col, entity.row, targetCol, targetRow, entity.station.id);
+    entity.waypointIndex = 0;
+    entity.state = 'walking';
+  }
+
+  /**
    * Real message exchange between agents.
    * fromAgent walks over to toAgent, displays message, and returns to desk.
    */
@@ -162,9 +182,7 @@ export class OfficeCanvasEngine {
       meetRow,
     };
 
-    fromEntity.targetCol = meetCol;
-    fromEntity.targetRow = meetRow;
-    fromEntity.state = 'walking';
+    this.setAgentDestination(fromEntity, meetCol, meetRow, 'walking');
 
     this.onAgentSpoke?.(fromEntity.agent.name || fromEntity.agent.agent, toEntity.agent.name || toEntity.agent.agent, fromText);
   }
@@ -179,15 +197,11 @@ export class OfficeCanvasEngine {
     if (active) {
       entityList.forEach((entity, index) => {
         const seat = CONF_MEETING_SEATS[index % CONF_MEETING_SEATS.length];
-        entity.targetCol = seat.col;
-        entity.targetRow = seat.row;
-        entity.state = 'walking';
+        this.setAgentDestination(entity, seat.col, seat.row, 'sitting');
       });
     } else {
       entityList.forEach((entity) => {
-        entity.targetCol = entity.homeCol;
-        entity.targetRow = entity.homeRow;
-        entity.state = 'walking';
+        this.setAgentDestination(entity, entity.homeCol, entity.homeRow, 'sitting');
       });
     }
   }
@@ -301,26 +315,40 @@ export class OfficeCanvasEngine {
         }
       }
 
-      // Movement step
+      // Movement step with obstacle avoidance pathfinding
       if (entity.state === 'walking') {
-        const dCol = entity.targetCol - entity.col;
-        const dRow = entity.targetRow - entity.row;
+        const waypoints = entity.waypoints && entity.waypoints.length > 0
+          ? entity.waypoints
+          : [{ col: entity.targetCol, row: entity.targetRow }];
+        const currentWaypoint = waypoints[entity.waypointIndex || 0] || { col: entity.targetCol, row: entity.targetRow };
+
+        const dCol = currentWaypoint.col - entity.col;
+        const dRow = currentWaypoint.row - entity.row;
         const dist = Math.hypot(dCol, dRow);
 
         if (dist <= entity.walkSpeed * dt || dist < 0.08) {
-          entity.col = entity.targetCol;
-          entity.row = entity.targetRow;
+          entity.col = currentWaypoint.col;
+          entity.row = currentWaypoint.row;
 
-          // Arrived at destination
-          if (
-            Math.abs(entity.col - entity.homeCol) < 0.1 &&
-            Math.abs(entity.row - entity.homeRow) < 0.1
-          ) {
-            entity.state = 'sitting';
-            entity.direction = 'se'; // Face forward
-            entity.assignedPoiSlot = undefined;
+          if (entity.waypointIndex !== undefined && entity.waypointIndex < waypoints.length - 1) {
+            entity.waypointIndex++;
           } else {
-            entity.state = 'talking';
+            // Arrived at final destination!
+            entity.waypoints = undefined;
+            entity.waypointIndex = 0;
+
+            if (
+              Math.abs(entity.col - entity.homeCol) < 0.15 &&
+              Math.abs(entity.row - entity.homeRow) < 0.15
+            ) {
+              entity.col = entity.homeCol;
+              entity.row = entity.homeRow;
+              entity.state = 'sitting';
+              entity.direction = 'se';
+              entity.assignedPoiSlot = undefined;
+            } else {
+              entity.state = 'talking';
+            }
           }
         } else {
           entity.col += (dCol / dist) * entity.walkSpeed * dt;
@@ -371,16 +399,12 @@ export class OfficeCanvasEngine {
           ) || poi.slots[0];
 
           entity.assignedPoiSlot = { poiId: poi.id, col: freeSlot.col, row: freeSlot.row };
-          entity.targetCol = freeSlot.col;
-          entity.targetRow = freeSlot.row;
-          entity.state = 'walking';
+          this.setAgentDestination(entity, freeSlot.col, freeSlot.row, 'visiting_poi');
 
           // Return timer after break
           setTimeout(() => {
             if (entity.state !== 'dragged') {
-              entity.targetCol = entity.homeCol;
-              entity.targetRow = entity.homeRow;
-              entity.state = 'walking';
+              this.setAgentDestination(entity, entity.homeCol, entity.homeRow, 'sitting');
             }
           }, 4500);
         }
@@ -461,9 +485,7 @@ export class OfficeCanvasEngine {
           toEntity.bubbleText = undefined;
           toEntity.direction = 'se';
 
-          fromEntity.targetCol = fromEntity.homeCol;
-          fromEntity.targetRow = fromEntity.homeRow;
-          fromEntity.state = 'walking';
+          this.setAgentDestination(fromEntity, fromEntity.homeCol, fromEntity.homeRow, 'sitting');
         }
       } else if (conv.stage === 'returning') {
         if (fromEntity.state === 'sitting') {
@@ -575,10 +597,8 @@ export class OfficeCanvasEngine {
           entity.bubbleText = 'Whoa! Heading back to my seat...';
           entity.bubbleDuration = 2.5;
 
-          // Walk back to their assigned desk station!
-          entity.state = 'walking';
-          entity.targetCol = entity.homeCol;
-          entity.targetRow = entity.homeRow;
+          // Walk back along safe corridors to their assigned desk station!
+          this.setAgentDestination(entity, entity.homeCol, entity.homeRow, 'sitting');
         } else {
           // It was a simple click: select agent in sidebar!
           this.selectedPaneId = entity.agent.paneId;
@@ -614,9 +634,7 @@ export class OfficeCanvasEngine {
     if (this.isDragging && this.draggedPaneId) {
       const entity = this.entities.get(this.draggedPaneId);
       if (entity) {
-        entity.state = 'walking';
-        entity.targetCol = entity.homeCol;
-        entity.targetRow = entity.homeRow;
+        this.setAgentDestination(entity, entity.homeCol, entity.homeRow, 'sitting');
       }
       this.isDragging = false;
       this.draggedPaneId = null;
@@ -640,19 +658,88 @@ export class OfficeCanvasEngine {
     ctx.scale(scale, scale);
     ctx.imageSmoothingEnabled = false;
 
-    // 1. Rich Modern Studio Slate Backdrop (Simulation Game aesthetic)
+    // 1. Rich Atmospheric Twilight City Backdrop (High-end Simulation Game aesthetic)
     const bgGrad = ctx.createLinearGradient(0, 0, 0, this.baseHeight);
-    bgGrad.addColorStop(0, '#0c1322');
-    bgGrad.addColorStop(0.5, '#0f172a');
-    bgGrad.addColorStop(1, '#080d1a');
+    bgGrad.addColorStop(0, '#040711');
+    bgGrad.addColorStop(0.35, '#081022');
+    bgGrad.addColorStop(0.7, '#0f1a34');
+    bgGrad.addColorStop(1, '#070c18');
     ctx.fillStyle = bgGrad;
     ctx.fillRect(0, 0, this.baseWidth, this.baseHeight);
 
-    // Subtle ambient floor shadow under the entire building diorama
+    // Distant Starfield in upper night sky
+    ctx.save();
+    const starCoords = [
+      [120, 35], [260, 20], [380, 48], [510, 22], [640, 40], [780, 18], [910, 38], [1030, 25],
+      [180, 70], [320, 60], [450, 75], [710, 65], [850, 80], [990, 60], [70, 95]
+    ];
+    for (let i = 0; i < starCoords.length; i++) {
+      const [sx, sy] = starCoords[i];
+      const starTwinkle = Math.sin((elapsed + i * 400) / 350) * 0.3 + 0.6;
+      ctx.fillStyle = `rgba(224, 242, 254, ${starTwinkle})`;
+      ctx.fillRect(sx, sy, 1.5, 1.5);
+    }
+
+    // Distant City Skyline Silhouettes (behind building diorama)
+    const skylineBuildings = [
+      { x: 30, w: 55, h: 110, lit: true },
+      { x: 95, w: 40, h: 85, lit: false },
+      { x: 145, w: 65, h: 140, lit: true, antenna: true },
+      { x: 220, w: 50, h: 95, lit: false },
+      { x: 280, w: 70, h: 125, lit: true },
+      { x: 360, w: 45, h: 75, lit: false },
+      { x: 740, w: 50, h: 80, lit: false },
+      { x: 800, w: 65, h: 135, lit: true, antenna: true },
+      { x: 875, w: 45, h: 90, lit: false },
+      { x: 930, w: 75, h: 150, lit: true },
+      { x: 1015, w: 55, h: 105, lit: false },
+      { x: 1080, w: 35, h: 70, lit: false },
+    ];
+
+    for (const b of skylineBuildings) {
+      const by = 180 - b.h;
+      // Dark skyscraper body
+      ctx.fillStyle = '#0a1324';
+      ctx.fillRect(b.x, by, b.w, b.h);
+      ctx.strokeStyle = '#152542';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(b.x + 0.5, by + 0.5, b.w - 1, b.h - 1);
+
+      // Lit micro windows on towers
+      if (b.lit) {
+        ctx.fillStyle = 'rgba(254, 240, 138, 0.4)';
+        for (let wy = by + 12; wy < by + b.h - 15; wy += 8) {
+          for (let wx = b.x + 8; wx < b.x + b.w - 8; wx += 7) {
+            if ((wx + wy) % 5 !== 0) {
+              ctx.fillRect(wx, wy, 2, 3);
+            }
+          }
+        }
+      }
+
+      // Blinking red aircraft hazard beacon at tower spires
+      if (b.antenna) {
+        ctx.strokeStyle = '#334155';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(b.x + b.w / 2, by);
+        ctx.lineTo(b.x + b.w / 2, by - 16);
+        ctx.stroke();
+
+        const beaconFlash = Math.sin((elapsed + b.x) / 250) > 0.2 ? 1 : 0.15;
+        ctx.fillStyle = `rgba(239, 68, 68, ${beaconFlash})`;
+        ctx.beginPath();
+        ctx.arc(b.x + b.w / 2, by - 16, 2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+    ctx.restore();
+
+    // High-Tech Ambient Diorama Spotlight under the office foundation
     const centerFloor = gridToIso(8, 7, originX, originY);
-    const dioramaGlow = ctx.createRadialGradient(centerFloor.x, centerFloor.y, 40, centerFloor.x, centerFloor.y, 460);
-    dioramaGlow.addColorStop(0, 'rgba(56, 189, 248, 0.04)');
-    dioramaGlow.addColorStop(0.7, 'rgba(15, 23, 42, 0.3)');
+    const dioramaGlow = ctx.createRadialGradient(centerFloor.x, centerFloor.y, 40, centerFloor.x, centerFloor.y, 480);
+    dioramaGlow.addColorStop(0, 'rgba(56, 189, 248, 0.06)');
+    dioramaGlow.addColorStop(0.5, 'rgba(30, 41, 59, 0.25)');
     dioramaGlow.addColorStop(1, 'rgba(0, 0, 0, 0)');
     ctx.fillStyle = dioramaGlow;
     ctx.fillRect(0, 0, this.baseWidth, this.baseHeight);
@@ -721,11 +808,10 @@ export class OfficeCanvasEngine {
     ctx.lineTo(originX, originY);
     ctx.stroke();
 
-    // Render Distinct Wall Inset Props on NW Wall (Sloping down-right)
+    // Render Architectural Wall Inset Props on NW Wall (Sloping down-right, clean 1-window design)
     const nwWallProps: Array<{ col: number; tile: string }> = [
-      { col: 1.0, tile: 'wall_window' },
-      { col: 4.0, tile: 'wall_whiteboard' },
-      { col: 7.0, tile: 'wall_window' },
+      { col: 2.0, tile: 'wall_window' },
+      { col: 6.0, tile: 'wall_whiteboard' },
       { col: 10.0, tile: 'wall_server' },
       { col: 13.0, tile: 'wall_top' },
     ];
@@ -737,12 +823,11 @@ export class OfficeCanvasEngine {
       }
     }
 
-    // Render Distinct Wall Inset Props on NE Wall (Sloping down-left)
+    // Render Architectural Wall Inset Props on NE Wall (Sloping down-left, clean 1-window design)
     const neWallProps: Array<{ row: number; tile: string }> = [
-      { row: 1.0, tile: 'wall_bookshelf' },
-      { row: 4.0, tile: 'wall_window_ne' },
-      { row: 7.0, tile: 'wall_dashboard' },
-      { row: 10.0, tile: 'wall_art' },
+      { row: 2.0, tile: 'wall_bookshelf' },
+      { row: 6.0, tile: 'wall_window_ne' },
+      { row: 10.0, tile: 'wall_dashboard' },
     ];
     for (const p of neWallProps) {
       const tileMeta = tiles[p.tile] || tiles.wall_art;
@@ -964,7 +1049,7 @@ export class OfficeCanvasEngine {
       });
     }
 
-    // E. Breakout Lounge Sofa & Coffee Table
+    // E. Breakout Lounge Sofa & Coffee Table (Kitchenette)
     const sofaTile = tiles.lounge_sofa;
     if (sofaTile) {
       const iso = gridToIso(13.0, 5.0, originX, originY);
@@ -980,6 +1065,26 @@ export class OfficeCanvasEngine {
       const iso = gridToIso(14.0, 5.2, originX, originY);
       renderables.push({
         depth: 14.0 + 5.2,
+        draw: () => {
+          ctx.drawImage(tileset, coffeeTableTile.x, coffeeTableTile.y, coffeeTableTile.w, coffeeTableTile.h, iso.x - 24, iso.y - 20, coffeeTableTile.w, coffeeTableTile.h);
+        },
+      });
+    }
+
+    // E2. Executive Reception Lounge (South-West Entrance Area)
+    if (sofaTile) {
+      const iso = gridToIso(3.5, 10.5, originX, originY);
+      renderables.push({
+        depth: 3.5 + 10.5,
+        draw: () => {
+          ctx.drawImage(tileset, sofaTile.x, sofaTile.y, sofaTile.w, sofaTile.h, iso.x - 32, iso.y - 42, sofaTile.w, sofaTile.h);
+        },
+      });
+    }
+    if (coffeeTableTile) {
+      const iso = gridToIso(4.5, 10.5, originX, originY);
+      renderables.push({
+        depth: 4.5 + 10.5,
         draw: () => {
           ctx.drawImage(tileset, coffeeTableTile.x, coffeeTableTile.y, coffeeTableTile.w, coffeeTableTile.h, iso.x - 24, iso.y - 20, coffeeTableTile.w, coffeeTableTile.h);
         },
@@ -1249,7 +1354,7 @@ export class OfficeCanvasEngine {
     ctx.font = '7.5px monospace';
 
     let snippet = task.replace(/[\r\n]+/g, ' ').trim();
-    if (snippet.length > 34) snippet = snippet.slice(0, 32) + '…';
+    if (snippet.length > 24) snippet = snippet.slice(0, 22) + '…';
 
     const textW = ctx.measureText(snippet).width;
     const boxW = Math.max(textW + 18, 64);
