@@ -497,7 +497,17 @@ export function generateModernOfficeTileset(): PNG {
   // WALL 1: North-West Window with Panoramic City Skyline (64x96) at [0, 64]
   // --------------------------------------------------
   drawIsoWallBase(0, 64, PALETTE.wallDrywallMid);
-  // Large angled architectural window aperture (x=8 to 56, height 42)
+
+  // Helper to ensure all window contents remain strictly within the framed aperture
+  const isNWWinAperture = (x: number, y: number) => {
+    if (x < 8 || x > 56) return false;
+    const baseY = 64 + 48 + Math.round(x * 0.5);
+    const winTopY = baseY - 46;
+    const winBotY = baseY - 8;
+    return y >= winTopY && y <= winBotY;
+  };
+
+  // 1. Sky gradient inside window
   for (let x = 8; x <= 56; x++) {
     const baseY = 64 + 48 + Math.round(x * 0.5);
     const winTopY = baseY - 46;
@@ -507,7 +517,6 @@ export function generateModernOfficeTileset(): PNG {
     setPixel(png, x, winTopY - 1, PALETTE.windowFrame);
     setPixel(png, x, winBotY + 1, PALETTE.windowFrame);
 
-    // Sky gradient inside window
     for (let y = winTopY; y <= winBotY; y++) {
       const t = (y - winTopY) / (winBotY - winTopY);
       const skyCol: RGBA = [
@@ -520,34 +529,46 @@ export function generateModernOfficeTileset(): PNG {
     }
   }
 
-  // Skyscrapers & City Skyline
-  fillRect(png, 12, 86, 10, 26, PALETTE.buildingFar);
-  fillRect(png, 26, 78, 14, 38, PALETTE.buildingNear);
-  fillRect(png, 42, 92, 12, 28, PALETTE.buildingMid);
-  // Lit office windows on skyscrapers
-  for (let by = 82; by < 112; by += 4) {
-    for (let bx = 28; bx < 38; bx += 3) {
-      if ((bx + by) % 5 !== 0) setPixel(png, bx, by, PALETTE.windowLitGold);
+  // 2. Skyscrapers strictly contained within window aperture
+  for (let x = 12; x <= 22; x++) {
+    for (let y = 84; y <= 118; y++) {
+      if (isNWWinAperture(x, y)) setPixel(png, x, y, PALETTE.buildingFar);
     }
   }
-  for (let by = 96; by < 116; by += 4) {
-    for (let bx = 44; bx < 52; bx += 3) {
-      setPixel(png, bx, by, PALETTE.windowLitCyan);
+  for (let x = 24; x <= 38; x++) {
+    for (let y = 80; y <= 124; y++) {
+      if (isNWWinAperture(x, y)) setPixel(png, x, y, PALETTE.buildingNear);
     }
   }
-  // Modern Window Mullion Dividers & Diagonal Glass Glare
+  for (let x = 40; x <= 52; x++) {
+    for (let y = 88; y <= 130; y++) {
+      if (isNWWinAperture(x, y)) setPixel(png, x, y, PALETTE.buildingMid);
+    }
+  }
+
+  // 3. Lit office windows
+  for (let by = 84; by < 122; by += 4) {
+    for (let bx = 26; bx <= 36; bx += 3) {
+      if (isNWWinAperture(bx, by) && (bx + by) % 3 !== 0) {
+        setPixel(png, bx, by, PALETTE.windowLitGold);
+      }
+    }
+    for (let bx = 42; bx <= 50; bx += 3) {
+      if (isNWWinAperture(bx, by) && (bx + by) % 2 === 0) {
+        setPixel(png, bx, by, PALETTE.windowLitCyan);
+      }
+    }
+  }
+
+  // 4. Architectural Window Mullions (Clean 3-pane division)
   for (let x = 8; x <= 56; x++) {
     const baseY = 64 + 48 + Math.round(x * 0.5);
     const winTopY = baseY - 46;
     const winBotY = baseY - 8;
-    if (x === 32) {
-      for (let y = winTopY; y <= winBotY; y++) setPixel(png, x, y, PALETTE.windowFrameHighlight);
-    }
-    // Diagonal glass sheen glare
-    const glareY = winTopY + Math.round((x - 8) * 0.7);
-    if (glareY >= winTopY && glareY <= winBotY) {
-      setPixel(png, x, glareY, PALETTE.glassGlare);
-      setPixel(png, x, glareY + 1, PALETTE.glassGlare);
+    if (x === 24 || x === 40) {
+      for (let y = winTopY; y <= winBotY; y++) {
+        setPixel(png, x, y, PALETTE.windowFrameHighlight);
+      }
     }
   }
 
@@ -699,6 +720,96 @@ export function generateModernOfficeTileset(): PNG {
   // Elegant geometric gradient inside painting
   fillIsoDiamond(png, 406, 92, 20, 12, PALETTE.syntaxPurple, PALETTE.syntaxCyan);
 
+  // --------------------------------------------------
+  // WALL 8: North-East Panoramic Window with Skyline (64x96) at [448, 64]
+  // (Sloping down-left for North-East wall)
+  // --------------------------------------------------
+  for (let x = 0; x < 64; x++) {
+    const baseY = 64 + 88 - Math.round(x * 0.5);
+    const topY = baseY - 64;
+    for (let y = topY; y <= baseY; y++) {
+      setPixel(png, 448 + x, y, PALETTE.wallDrywallMid);
+    }
+    setPixel(png, 448 + x, topY, PALETTE.wallTrimSilver);
+    setPixel(png, 448 + x, baseY - 2, PALETTE.baseboardWoodMid);
+    setPixel(png, 448 + x, baseY - 1, PALETTE.baseboardWoodDark);
+    setPixel(png, 448 + x, baseY, PALETTE.floorShadow);
+  }
+
+  const isNEWinAperture = (px: number, y: number) => {
+    const rx = px - 448;
+    if (rx < 8 || rx > 56) return false;
+    const baseY = 64 + 88 - Math.round(rx * 0.5);
+    const winTopY = baseY - 48;
+    const winBotY = baseY - 8;
+    return y >= winTopY && y <= winBotY;
+  };
+
+  for (let rx = 8; rx <= 56; rx++) {
+    const baseY = 64 + 88 - Math.round(rx * 0.5);
+    const winTopY = baseY - 48;
+    const winBotY = baseY - 8;
+    const px = 448 + rx;
+
+    setPixel(png, px, winTopY - 1, PALETTE.windowFrame);
+    setPixel(png, px, winBotY + 1, PALETTE.windowFrame);
+
+    for (let y = winTopY; y <= winBotY; y++) {
+      const t = (y - winTopY) / (winBotY - winTopY);
+      const skyCol: RGBA = [
+        Math.round(PALETTE.skyTop[0] * (1 - t) + PALETTE.skyHorizon[0] * t),
+        Math.round(PALETTE.skyTop[1] * (1 - t) + PALETTE.skyHorizon[1] * t),
+        Math.round(PALETTE.skyTop[2] * (1 - t) + PALETTE.skyHorizon[2] * t),
+        255,
+      ];
+      setPixel(png, px, y, skyCol);
+    }
+  }
+
+  // Skyscrapers strictly inside window aperture
+  for (let px = 448 + 12; px <= 448 + 24; px++) {
+    for (let y = 88; y <= 130; y++) {
+      if (isNEWinAperture(px, y)) setPixel(png, px, y, PALETTE.buildingMid);
+    }
+  }
+  for (let px = 448 + 26; px <= 448 + 40; px++) {
+    for (let y = 80; y <= 126; y++) {
+      if (isNEWinAperture(px, y)) setPixel(png, px, y, PALETTE.buildingNear);
+    }
+  }
+  for (let px = 448 + 42; px <= 448 + 52; px++) {
+    for (let y = 84; y <= 120; y++) {
+      if (isNEWinAperture(px, y)) setPixel(png, px, y, PALETTE.buildingFar);
+    }
+  }
+
+  // Lit office windows
+  for (let by = 84; by < 122; by += 4) {
+    for (let bx = 448 + 28; bx <= 448 + 38; bx += 3) {
+      if (isNEWinAperture(bx, by) && (bx + by) % 3 !== 0) {
+        setPixel(png, bx, by, PALETTE.windowLitGold);
+      }
+    }
+    for (let bx = 448 + 14; bx <= 448 + 22; bx += 3) {
+      if (isNEWinAperture(bx, by) && (bx + by) % 2 === 0) {
+        setPixel(png, bx, by, PALETTE.windowLitCyan);
+      }
+    }
+  }
+
+  // Architectural Window Mullions
+  for (let rx = 8; rx <= 56; rx++) {
+    const baseY = 64 + 88 - Math.round(rx * 0.5);
+    const winTopY = baseY - 48;
+    const winBotY = baseY - 8;
+    const px = 448 + rx;
+    if (rx === 24 || rx === 40) {
+      for (let y = winTopY; y <= winBotY; y++) {
+        setPixel(png, px, y, PALETTE.windowFrameHighlight);
+      }
+    }
+  }
+
   // ====================================================
   // ROW 2: 2.5D ISOMETRIC FURNITURE & WORKSTATIONS (y = 160 to 255)
   // ====================================================
@@ -739,37 +850,33 @@ export function generateModernOfficeTileset(): PNG {
   fillIsoDiamond(png, 4, 168, 56, 28, PALETTE.transparent, PALETTE.deskSurfaceHighlight);
 
   // Monitor 1: Left Ultrawide Curved Screen (angled towards chair)
-  // Monitor stand
-  fillRect(png, 20, 172, 4, 4, PALETTE.monitorFrame);
-  // Screen body (angled)
-  fillRect(png, 12, 156, 18, 16, PALETTE.monitorFrame);
-  fillRect(png, 13, 157, 16, 14, PALETTE.monitorScreenBg);
-  // IDE code syntax on Left Screen
-  fillRect(png, 15, 159, 10, 1, PALETTE.syntaxPurple); // const / import
-  fillRect(png, 15, 161, 12, 1, PALETTE.syntaxCyan); // function / class
-  fillRect(png, 17, 163, 8, 1, PALETTE.syntaxYellow); // parameters
-  fillRect(png, 17, 165, 11, 1, PALETTE.syntaxGreen); // return code
+  fillRect(png, 14, 172, 4, 4, PALETTE.monitorFrame);
+  fillRect(png, 6, 158, 16, 16, PALETTE.monitorFrame);
+  fillRect(png, 7, 159, 14, 14, PALETTE.monitorScreenBg);
+  fillRect(png, 9, 161, 8, 1, PALETTE.syntaxPurple); // const / import
+  fillRect(png, 9, 163, 10, 1, PALETTE.syntaxCyan); // function / class
+  fillRect(png, 10, 165, 7, 1, PALETTE.syntaxYellow); // parameters
+  fillRect(png, 10, 167, 9, 1, PALETTE.syntaxGreen); // return code
 
   // Monitor 2: Right Secondary Screen (Portrait / Documentation / Terminal)
-  fillRect(png, 32, 168, 4, 4, PALETTE.monitorFrame);
-  fillRect(png, 31, 153, 15, 18, PALETTE.monitorFrame);
-  fillRect(png, 32, 154, 13, 16, PALETTE.monitorScreenBg);
-  // Terminal logs / status on Right Screen
-  fillRect(png, 34, 156, 9, 1, PALETTE.syntaxGreen); // $ git commit
-  fillRect(png, 34, 158, 8, 1, PALETTE.syntaxCyan);
-  fillRect(png, 34, 160, 10, 1, PALETTE.syntaxOrange);
+  fillRect(png, 46, 172, 4, 4, PALETTE.monitorFrame);
+  fillRect(png, 43, 155, 14, 18, PALETTE.monitorFrame);
+  fillRect(png, 44, 156, 12, 16, PALETTE.monitorScreenBg);
+  fillRect(png, 46, 158, 8, 1, PALETTE.syntaxGreen); // $ git commit
+  fillRect(png, 46, 160, 7, 1, PALETTE.syntaxCyan);
+  fillRect(png, 46, 162, 9, 1, PALETTE.syntaxOrange);
 
-  // Backlit Mechanical Keyboard on Desk Mat
-  fillRect(png, 20, 179, 16, 8, [30, 36, 48, 255]); // desk mat
-  fillRect(png, 22, 180, 12, 5, PALETTE.keyboardDark);
-  for (let kx = 23; kx < 33; kx += 2) {
+  // Backlit Mechanical Keyboard in Center (leaving center open for developer)
+  fillRect(png, 24, 179, 16, 8, [30, 36, 48, 255]); // desk mat
+  fillRect(png, 26, 180, 12, 5, PALETTE.keyboardDark);
+  for (let kx = 27; kx < 37; kx += 2) {
     setPixel(png, kx, 181, PALETTE.keyboardLight);
     setPixel(png, kx, 183, PALETTE.syntaxCyan); // cyan underglow!
   }
   // Ergonomic mouse & ceramic coffee mug
-  fillRect(png, 38, 181, 3, 4, PALETTE.keyboardDark);
-  fillRect(png, 44, 176, 4, 4, PALETTE.white); // white coffee mug
-  setPixel(png, 45, 177, PALETTE.baseboardWoodDark); // coffee inside
+  fillRect(png, 40, 181, 3, 4, PALETTE.keyboardDark);
+  fillRect(png, 43, 175, 4, 4, PALETTE.white); // white coffee mug
+  setPixel(png, 44, 176, PALETTE.baseboardWoodDark); // coffee inside
 
   // --------------------------------------------------
   // PROP 2: 2.5D Ergonomic Mesh Chair - South-East View (32x48) at [64, 160]
@@ -1019,6 +1126,19 @@ export function generateModernOfficeTileset(): PNG {
   setPixel(png, 276, 274, PALETTE.goldStar);
   setPixel(png, 284, 274, PALETTE.goldStar);
   setPixel(png, 280, 278, PALETTE.goldStar);
+
+  // --------------------------------------------------
+  // PROP 14: 2.5D Conference Chair - Rear Facing View (32x48) at [304, 256]
+  // (View from behind, for chairs on the front side of conference table)
+  // --------------------------------------------------
+  fillIsoDiamond(png, 308, 292, 24, 10, PALETTE.floorShadow);
+  fillRect(png, 312, 292, 16, 2, PALETTE.chairChrome);
+  fillRect(png, 312, 284, 2, 8, PALETTE.chairChrome);
+  fillRect(png, 326, 284, 2, 8, PALETTE.chairChrome);
+  // High backrest facing camera
+  fillRect(png, 312, 270, 16, 18, PALETTE.chairMeshDark);
+  fillRect(png, 314, 272, 12, 14, PALETTE.chairMeshMid);
+  fillRect(png, 312, 270, 16, 1, PALETTE.chairChrome);
 
   return png;
 }
@@ -1386,6 +1506,7 @@ const manifest = {
       wall_bookshelf: { x: 256, y: 64, w: 64, h: 96 },
       wall_dashboard: { x: 320, y: 64, w: 64, h: 96 },
       wall_art: { x: 384, y: 64, w: 64, h: 96 },
+      wall_window_ne: { x: 448, y: 64, w: 64, h: 96 },
 
       // Furniture & Props
       desk: { x: 0, y: 160, w: 64, h: 64 },
@@ -1399,6 +1520,7 @@ const manifest = {
 
       conference_table: { x: 0, y: 256, w: 96, h: 64 },
       conference_chair: { x: 96, y: 256, w: 32, h: 48 },
+      conf_chair_back: { x: 304, y: 256, w: 32, h: 48 },
       lounge_sofa: { x: 128, y: 256, w: 64, h: 64 },
       coffee_table: { x: 192, y: 256, w: 48, h: 32 },
       cursor_hand: { x: 240, y: 256, w: 24, h: 24 },

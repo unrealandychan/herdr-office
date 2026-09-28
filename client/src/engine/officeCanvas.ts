@@ -55,20 +55,20 @@ export interface AgentEntity {
   assignedPoiSlot?: { poiId: string; col: number; row: number };
 }
 
-// 12 Distinct Seats around the Executive Conference Suite
+// 12 Distinct Seats around the Executive Conference Suite (Neatly framing the table)
 const CONF_MEETING_SEATS = [
-  { col: 12.2, row: 7.8, dir: 'se' as const },
-  { col: 13.0, row: 7.8, dir: 'se' as const },
-  { col: 13.8, row: 7.8, dir: 'se' as const },
-  { col: 12.2, row: 10.2, dir: 'ne' as const },
-  { col: 13.0, row: 10.2, dir: 'ne' as const },
-  { col: 13.8, row: 10.2, dir: 'ne' as const },
-  { col: 11.4, row: 9.0, dir: 'se' as const },
-  { col: 14.6, row: 9.0, dir: 'sw' as const },
-  { col: 11.2, row: 7.8, dir: 'se' as const },
-  { col: 14.8, row: 10.2, dir: 'ne' as const },
-  { col: 12.0, row: 11.0, dir: 'ne' as const },
-  { col: 14.0, row: 11.0, dir: 'ne' as const },
+  { col: 12.2, row: 8.7, dir: 'se' as const },
+  { col: 13.0, row: 8.7, dir: 'se' as const },
+  { col: 13.8, row: 8.7, dir: 'se' as const },
+  { col: 12.2, row: 10.3, dir: 'ne' as const },
+  { col: 13.0, row: 10.3, dir: 'ne' as const },
+  { col: 13.8, row: 10.3, dir: 'ne' as const },
+  { col: 11.5, row: 9.5, dir: 'se' as const },
+  { col: 14.5, row: 9.5, dir: 'sw' as const },
+  { col: 11.6, row: 8.8, dir: 'se' as const },
+  { col: 14.4, row: 8.8, dir: 'sw' as const },
+  { col: 11.6, row: 10.2, dir: 'ne' as const },
+  { col: 14.4, row: 10.2, dir: 'ne' as const },
 ];
 
 export class OfficeCanvasEngine {
@@ -239,9 +239,9 @@ export class OfficeCanvasEngine {
     // Add or update entities with guaranteed unique desk stations
     this.agents.forEach((agent, i) => {
       const station = getStationForIndex(i);
-      // Place sitting position at the desk
-      const homeCol = station.deskCol;
-      const homeRow = station.deskRow;
+      // Sitting position is the chair at the desk station
+      const homeCol = station.deskCol - 0.25;
+      const homeRow = station.deskRow - 0.25;
       const screen = gridToIso(homeCol, homeRow, this.originX, this.originY);
 
       let entity = this.entities.get(agent.paneId);
@@ -478,9 +478,12 @@ export class OfficeCanvasEngine {
   // ====================================================
   private getAgentUnderMouse(mx: number, my: number): { agent: HerdrAgent; entity: AgentEntity } | null {
     for (const [, entity] of this.entities) {
+      const deskIso = gridToIso(entity.station.deskCol, entity.station.deskRow, this.originX, this.originY);
+      const headTopY = entity.state === 'sitting' ? deskIso.y - 48 : entity.screenY - 44;
       const dx = mx - entity.screenX;
-      const dy = my - (entity.screenY - 24);
-      if (Math.hypot(dx, dy) <= 28) {
+      const dy = my - (headTopY + 8);
+      // Generous, natural clickable hitbox covering character, nameplate, and task bubble
+      if ((dx * dx) / (24 * 24) + (dy * dy) / (34 * 34) <= 1) {
         return { agent: entity.agent, entity };
       }
     }
@@ -489,8 +492,10 @@ export class OfficeCanvasEngine {
 
   private handleMouseDown = (e: MouseEvent) => {
     const rect = this.canvas.getBoundingClientRect();
-    const mx = (e.clientX - rect.left) / this.scale;
-    const my = (e.clientY - rect.top) / this.scale;
+    const scaleX = this.canvas.width / rect.width;
+    const scaleY = this.canvas.height / rect.height;
+    const mx = ((e.clientX - rect.left) * scaleX) / this.scale;
+    const my = ((e.clientY - rect.top) * scaleY) / this.scale;
 
     const hit = this.getAgentUnderMouse(mx, my);
     if (hit) {
@@ -508,15 +513,17 @@ export class OfficeCanvasEngine {
 
   private handleMouseMove = (e: MouseEvent) => {
     const rect = this.canvas.getBoundingClientRect();
-    const mx = (e.clientX - rect.left) / this.scale;
-    const my = (e.clientY - rect.top) / this.scale;
+    const scaleX = this.canvas.width / rect.width;
+    const scaleY = this.canvas.height / rect.height;
+    const mx = ((e.clientX - rect.left) * scaleX) / this.scale;
+    const my = ((e.clientY - rect.top) * scaleY) / this.scale;
 
     // Track hovered floor tile in simulation game coordinates
     const gridPos = isoToGrid(mx, my, this.originX, this.originY);
     if (
-      gridPos.col >= 1 &&
+      gridPos.col >= 0 &&
       gridPos.col < OFFICE_COLS &&
-      gridPos.row >= 1 &&
+      gridPos.row >= 0 &&
       gridPos.row < OFFICE_ROWS
     ) {
       this.hoveredTile = { col: Math.floor(gridPos.col), row: Math.floor(gridPos.row) };
@@ -591,8 +598,10 @@ export class OfficeCanvasEngine {
     } else {
       // Clicked on empty space: deselect
       const rect = this.canvas.getBoundingClientRect();
-      const mx = (e.clientX - rect.left) / this.scale;
-      const my = (e.clientY - rect.top) / this.scale;
+      const scaleX = this.canvas.width / rect.width;
+      const scaleY = this.canvas.height / rect.height;
+      const mx = ((e.clientX - rect.left) * scaleX) / this.scale;
+      const my = ((e.clientY - rect.top) * scaleY) / this.scale;
       const hit = this.getAgentUnderMouse(mx, my);
       if (!hit) {
         this.selectedPaneId = null;
@@ -651,7 +660,7 @@ export class OfficeCanvasEngine {
     // 2. Render Seamless 2.5D Architectural Back Walls
     // North-West Wall (runs row 0, col 0..15 down-right)
     const nwEnd = gridToIso(OFFICE_COLS, 0, originX, originY);
-    const wallHeight = 84;
+    const wallHeight = 64;
 
     // Solid North-West wall polygon
     ctx.fillStyle = '#e2e8f0'; // Clean modern off-white drywall
@@ -704,13 +713,42 @@ export class OfficeCanvasEngine {
     ctx.lineTo(neEnd.x, neEnd.y);
     ctx.stroke();
 
-    // Render Wall Inset Props & Windows on NW Wall
-    for (let c = 0; c < OFFICE_COLS; c++) {
-      const cell = map[0][c];
-      const tileMeta = tiles[cell.type] || tiles.wall_top;
-      if (tileMeta && cell.type !== 'wall_top') {
-        const iso = gridToIso(c, 0, originX, originY);
-        ctx.drawImage(tileset, tileMeta.x, tileMeta.y, tileMeta.w, tileMeta.h, iso.x - 32, iso.y - 74, tileMeta.w, tileMeta.h);
+    // Vertical Corner Seam where both walls meet in 3D
+    ctx.strokeStyle = '#94a3b8';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(originX, originY - wallHeight);
+    ctx.lineTo(originX, originY);
+    ctx.stroke();
+
+    // Render Distinct Wall Inset Props on NW Wall (Sloping down-right)
+    const nwWallProps: Array<{ col: number; tile: string }> = [
+      { col: 1.0, tile: 'wall_window' },
+      { col: 4.0, tile: 'wall_whiteboard' },
+      { col: 7.0, tile: 'wall_window' },
+      { col: 10.0, tile: 'wall_server' },
+      { col: 13.0, tile: 'wall_top' },
+    ];
+    for (const p of nwWallProps) {
+      const tileMeta = tiles[p.tile];
+      if (tileMeta) {
+        const iso = gridToIso(p.col, 0, originX, originY);
+        ctx.drawImage(tileset, tileMeta.x, tileMeta.y, tileMeta.w, tileMeta.h, iso.x, iso.y - 56, tileMeta.w, tileMeta.h);
+      }
+    }
+
+    // Render Distinct Wall Inset Props on NE Wall (Sloping down-left)
+    const neWallProps: Array<{ row: number; tile: string }> = [
+      { row: 1.0, tile: 'wall_bookshelf' },
+      { row: 4.0, tile: 'wall_window_ne' },
+      { row: 7.0, tile: 'wall_dashboard' },
+      { row: 10.0, tile: 'wall_art' },
+    ];
+    for (const p of neWallProps) {
+      const tileMeta = tiles[p.tile] || tiles.wall_art;
+      if (tileMeta) {
+        const iso = gridToIso(0, p.row, originX, originY);
+        ctx.drawImage(tileset, tileMeta.x, tileMeta.y, tileMeta.w, tileMeta.h, iso.x - 64, iso.y - 56, tileMeta.w, tileMeta.h);
       }
     }
 
@@ -801,7 +839,29 @@ export class OfficeCanvasEngine {
 
     const renderables: RenderableItem[] = [];
 
-    // A. Workstations (Desks & Chairs)
+    // Floor Selection Halo (Rendered flat on floor before furniture)
+    for (const entity of this.entities.values()) {
+      const isSelected = entity.agent.paneId === this.selectedPaneId;
+      const isHovered = entity.agent.paneId === this.hoveredPaneId;
+      if (isSelected || isHovered) {
+        const ringTile = tiles.selection_halo;
+        if (ringTile) {
+          const iso = gridToIso(entity.col, entity.row, originX, originY);
+          const pulse = Math.sin(elapsed / 200) * 0.2 + 0.8;
+          renderables.push({
+            depth: entity.col + entity.row - 0.45,
+            draw: () => {
+              ctx.save();
+              ctx.globalAlpha = isSelected ? pulse : 0.6;
+              ctx.drawImage(tileset, ringTile.x, ringTile.y, ringTile.w, ringTile.h, iso.x - 32, iso.y - 16, ringTile.w, ringTile.h);
+              ctx.restore();
+            },
+          });
+        }
+      }
+    }
+
+    // A. Workstations (Chairs & Desks)
     for (const station of DESK_STATIONS) {
       const deskTile = tiles.desk;
       const chairTile = tiles.chair;
@@ -812,7 +872,7 @@ export class OfficeCanvasEngine {
       const chairIso = gridToIso(chairCol, chairRow, originX, originY);
 
       renderables.push({
-        depth: chairCol + chairRow - 0.1,
+        depth: station.deskCol + station.deskRow - 0.35,
         draw: () => {
           if (chairTile) {
             ctx.drawImage(tileset, chairTile.x, chairTile.y, chairTile.w, chairTile.h, chairIso.x - 16, chairIso.y - 28, chairTile.w, chairTile.h);
@@ -820,10 +880,10 @@ export class OfficeCanvasEngine {
         },
       });
 
-      // Desk with dual monitors
+      // Desk with flanking dual monitors and keyboard
       const deskIso = gridToIso(station.deskCol, station.deskRow, originX, originY);
       renderables.push({
-        depth: station.deskCol + station.deskRow,
+        depth: station.deskCol + station.deskRow + 0.1,
         draw: () => {
           if (deskTile) {
             ctx.drawImage(tileset, deskTile.x, deskTile.y, deskTile.w, deskTile.h, deskIso.x - 32, deskIso.y - 34, deskTile.w, deskTile.h);
@@ -835,9 +895,9 @@ export class OfficeCanvasEngine {
     // B. Breakroom Espresso Bar & Water Cooler
     const espressoTile = tiles.espresso_bar;
     if (espressoTile) {
-      const iso = gridToIso(14.0, 2.0, originX, originY);
+      const iso = gridToIso(13.8, 2.0, originX, originY);
       renderables.push({
-        depth: 14.0 + 2.0,
+        depth: 13.8 + 2.0,
         draw: () => {
           ctx.drawImage(tileset, espressoTile.x, espressoTile.y, espressoTile.w, espressoTile.h, iso.x - 32, iso.y - 42, espressoTile.w, espressoTile.h);
         },
@@ -846,9 +906,9 @@ export class OfficeCanvasEngine {
 
     const waterCoolerTile = tiles.water_cooler;
     if (waterCoolerTile) {
-      const iso = gridToIso(15.0, 3.0, originX, originY);
+      const iso = gridToIso(14.8, 3.2, originX, originY);
       renderables.push({
-        depth: 15.0 + 3.0,
+        depth: 14.8 + 3.2,
         draw: () => {
           ctx.drawImage(tileset, waterCoolerTile.x, waterCoolerTile.y, waterCoolerTile.w, waterCoolerTile.h, iso.x - 16, iso.y - 42, waterCoolerTile.w, waterCoolerTile.h);
         },
@@ -859,9 +919,10 @@ export class OfficeCanvasEngine {
     const plantTile = tiles.plant;
     if (plantTile) {
       const plantPositions = [
-        { col: 12.0, row: 1.5 },
-        { col: 15.0, row: 6.0 },
-        { col: 1.5, row: 4.0 },
+        { col: 11.5, row: 1.5 },
+        { col: 14.8, row: 5.8 },
+        { col: 1.2, row: 1.5 },
+        { col: 1.2, row: 11.5 },
       ];
       for (const pos of plantPositions) {
         const iso = gridToIso(pos.col, pos.row, originX, originY);
@@ -877,26 +938,30 @@ export class OfficeCanvasEngine {
     // D. Executive Conference Room (Large Table & Chairs)
     const confTableTile = tiles.conference_table;
     if (confTableTile) {
-      const iso = gridToIso(13.0, 9.0, originX, originY);
+      const iso = gridToIso(13.0, 9.5, originX, originY);
       renderables.push({
-        depth: 13.0 + 9.0,
+        depth: 13.0 + 9.5,
         draw: () => {
           ctx.drawImage(tileset, confTableTile.x, confTableTile.y, confTableTile.w, confTableTile.h, iso.x - 48, iso.y - 32, confTableTile.w, confTableTile.h);
         },
       });
     }
 
-    const confChairTile = tiles.conference_chair || tiles.chair;
-    if (confChairTile) {
-      for (const seat of CONF_MEETING_SEATS) {
-        const iso = gridToIso(seat.col, seat.row, originX, originY);
-        renderables.push({
-          depth: seat.col + seat.row - 0.2,
-          draw: () => {
+    for (const seat of CONF_MEETING_SEATS) {
+      const iso = gridToIso(seat.col, seat.row, originX, originY);
+      const isFront = seat.row > 9.5;
+      const confChairTile = isFront
+        ? (tiles.conf_chair_back || tiles.chair)
+        : (tiles.conference_chair || tiles.chair);
+
+      renderables.push({
+        depth: isFront ? seat.col + seat.row + 0.15 : seat.col + seat.row - 0.15,
+        draw: () => {
+          if (confChairTile) {
             ctx.drawImage(tileset, confChairTile.x, confChairTile.y, confChairTile.w, confChairTile.h, iso.x - 16, iso.y - 28, confChairTile.w, confChairTile.h);
-          },
-        });
-      }
+          }
+        },
+      });
     }
 
     // E. Breakout Lounge Sofa & Coffee Table
@@ -924,9 +989,9 @@ export class OfficeCanvasEngine {
     // F. Standalone Server Rack Tower
     const serverRackTile = tiles.server_rack;
     if (serverRackTile) {
-      const iso = gridToIso(11.0, 1.8, originX, originY);
+      const iso = gridToIso(10.5, 1.2, originX, originY);
       renderables.push({
-        depth: 11.0 + 1.8,
+        depth: 10.5 + 1.2,
         draw: () => {
           ctx.drawImage(tileset, serverRackTile.x, serverRackTile.y, serverRackTile.w, serverRackTile.h, iso.x - 24, iso.y - 56, serverRackTile.w, serverRackTile.h);
         },
@@ -935,12 +1000,12 @@ export class OfficeCanvasEngine {
 
     // G. Agent Entities
     for (const entity of this.entities.values()) {
-      // Sitting agents have depth slightly ahead of desk so their head, hands, and upper torso are visible!
       let entityDepth = entity.col + entity.row;
       if (entity.state === 'sitting') {
-        entityDepth += 0.2; // Sit in front of desk surface!
+        // Seated comfortably in chair behind the desk slab
+        entityDepth = entity.station.deskCol + entity.station.deskRow - 0.15;
       } else if (entity.state === 'dragged') {
-        entityDepth += 999; // Dragged hero floats above all furniture!
+        entityDepth = 9999;
       }
 
       renderables.push({
@@ -962,13 +1027,46 @@ export class OfficeCanvasEngine {
     // 6. Atmospheric Lighting & Window Sunlight Beams
     this.renderAtmosphericLighting(elapsed);
 
-    // 7. Overhead Dialogue Cards & Status Bubbles (Always on top layer)
+    // 7. Overhead Overlays: Stacked Cleanly Above Characters (Never covering face or desk)
     for (const entity of this.entities.values()) {
-      if (entity.bubbleText) {
-        this.renderModernDialogueBox(entity.bubbleSpeaker || entity.agent.agent, entity.bubbleText, entity.screenX, entity.screenY - 48, elapsed);
-      } else if (entity.agent.status === 'working' && entity.state === 'sitting') {
+      const deskIso = gridToIso(entity.station.deskCol, entity.station.deskRow, originX, originY);
+      const headTopY = entity.state === 'sitting' ? deskIso.y - 48 : entity.screenY - 44;
+      const isSelected = entity.agent.paneId === this.selectedPaneId;
+
+      // A. Agent Nameplate (always visible right above head)
+      this.renderEntityNameplate(entity, entity.screenX, headTopY - 18);
+
+      // B. Mini Task Bubble (for coding agents, placed above nameplate)
+      if (entity.agent.status === 'working' && !entity.bubbleText) {
         const taskSnippet = entity.agent.currentTask || entity.agent.currentPrompt || 'Coding...';
-        this.renderModernMiniTaskBubble(entity.agent.name || entity.agent.agent, taskSnippet, entity.screenX, entity.screenY - 48, elapsed);
+        this.renderModernMiniTaskBubble(entity.agent.name || entity.agent.agent, taskSnippet, entity.screenX, headTopY - 40, elapsed);
+      }
+
+      // C. Active Dialogue Card (for speaking agents, placed above)
+      if (entity.bubbleText) {
+        this.renderModernDialogueBox(entity.bubbleSpeaker || entity.agent.agent, entity.bubbleText, entity.screenX, headTopY - 60, elapsed);
+      }
+
+      // D. Selection Glove Cursor
+      if (isSelected) {
+        const handBob = Math.sin(elapsed / 180) * 3;
+        const cursorTile = assets.manifest.tileset.tiles.cursor_hand;
+        if (cursorTile) {
+          const cursorY = entity.bubbleText
+            ? headTopY - 118 + handBob
+            : (entity.agent.status === 'working' ? headTopY - 66 : headTopY - 44) + handBob;
+          ctx.drawImage(
+            assets.tilesetImage,
+            cursorTile.x,
+            cursorTile.y,
+            cursorTile.w,
+            cursorTile.h,
+            entity.screenX - 12,
+            cursorY,
+            cursorTile.w,
+            cursorTile.h
+          );
+        }
       }
     }
 
@@ -976,7 +1074,7 @@ export class OfficeCanvasEngine {
   }
 
   private renderEntity(entity: AgentEntity, elapsed: number) {
-    const { ctx, assets } = this;
+    const { ctx, assets, originX, originY } = this;
     const charW = assets.manifest.characters.frameWidth; // 32
     const charH = assets.manifest.characters.frameHeight; // 48
 
@@ -1021,40 +1119,6 @@ export class OfficeCanvasEngine {
 
     const currentFrame = Math.floor((elapsed / 1000) * frameRate) % frameCount;
 
-    // Selection Halo & Pointing Glove Cursor
-    const isSelected = entity.agent.paneId === this.selectedPaneId;
-    const isHovered = entity.agent.paneId === this.hoveredPaneId;
-
-    if (isSelected || isHovered) {
-      ctx.save();
-      const pulse = Math.sin(elapsed / 200) * 0.2 + 0.8;
-      const ringTile = assets.manifest.tileset.tiles.selection_halo;
-      if (ringTile) {
-        ctx.globalAlpha = isSelected ? pulse : 0.6;
-        ctx.drawImage(assets.tilesetImage, ringTile.x, ringTile.y, ringTile.w, ringTile.h, entity.screenX - 32, entity.screenY - 12, ringTile.w, ringTile.h);
-      }
-
-      // Classic FF White Pointing Glove Cursor bobbing above selected hero!
-      if (isSelected) {
-        const handBob = Math.sin(elapsed / 180) * 3;
-        const cursorTile = assets.manifest.tileset.tiles.cursor_hand;
-        if (cursorTile) {
-          ctx.drawImage(
-            assets.tilesetImage,
-            cursorTile.x,
-            cursorTile.y,
-            cursorTile.w,
-            cursorTile.h,
-            entity.screenX - 12,
-            entity.screenY - 58 + handBob,
-            cursorTile.w,
-            cursorTile.h
-          );
-        }
-      }
-      ctx.restore();
-    }
-
     // Landing Dust Sparkle Effect
     if (entity.dropDustTimer) {
       const dustTile = assets.manifest.tileset.tiles.drop_dust;
@@ -1067,26 +1131,22 @@ export class OfficeCanvasEngine {
     }
 
     // Draw Character Sprite
+    const deskIso = gridToIso(entity.station.deskCol, entity.station.deskRow, originX, originY);
     const drawX = entity.screenX - charW / 2;
-    // Sitting characters are seated naturally on their office chair
-    const yShift = entity.state === 'sitting' ? -18 : 4;
-    const drawY = entity.screenY - charH + yShift;
+    // When sitting, hips rest on chair cushion and upper body is visible behind desk
+    const drawY = entity.state === 'sitting' ? deskIso.y - 48 : entity.screenY - 44;
 
     ctx.drawImage(charImg, currentFrame * charW, row * charH, charW, charH, drawX, drawY, charW, charH);
-
-    // Nameplate below character
-    this.renderEntityNameplate(entity);
   }
 
-  private renderEntityNameplate(entity: AgentEntity) {
+  private renderEntityNameplate(entity: AgentEntity, anchorX: number, badgeY: number) {
     const { ctx } = this;
     ctx.save();
     ctx.font = 'bold 8px monospace';
     const name = entity.agent.name || entity.agent.agent;
     const textW = ctx.measureText(name).width;
     const badgeW = textW + 16;
-    const badgeX = entity.screenX - badgeW / 2;
-    const badgeY = entity.screenY + (entity.state === 'sitting' ? 6 : 4);
+    const badgeX = anchorX - badgeW / 2;
 
     // Modern Dark Slate Card styling
     ctx.fillStyle = '#0f172a';
@@ -1137,7 +1197,7 @@ export class OfficeCanvasEngine {
     const boxH = 34;
 
     const boxX = Math.max(16, Math.min(this.baseWidth - boxW - 16, anchorX - boxW / 2));
-    const boxY = Math.max(16, anchorY + bob);
+    const boxY = Math.max(16, anchorY - boxH + bob);
 
     // Glassmorphic Dark Slate Background
     ctx.fillStyle = 'rgba(15, 23, 42, 0.95)';
@@ -1151,13 +1211,21 @@ export class OfficeCanvasEngine {
     ctx.stroke();
 
     // Downward Pointer
+    const pointerX = Math.max(boxX + 10, Math.min(boxX + boxW - 10, anchorX));
     ctx.fillStyle = 'rgba(15, 23, 42, 0.95)';
     ctx.beginPath();
-    ctx.moveTo(anchorX - 5, boxY + boxH);
-    ctx.lineTo(anchorX + 5, boxY + boxH);
-    ctx.lineTo(anchorX, boxY + boxH + 5);
+    ctx.moveTo(pointerX - 5, boxY + boxH);
+    ctx.lineTo(pointerX + 5, boxY + boxH);
+    ctx.lineTo(pointerX, boxY + boxH + 6);
     ctx.closePath();
     ctx.fill();
+
+    ctx.strokeStyle = '#38bdf8';
+    ctx.beginPath();
+    ctx.moveTo(pointerX - 5, boxY + boxH);
+    ctx.lineTo(pointerX, boxY + boxH + 6);
+    ctx.lineTo(pointerX + 5, boxY + boxH);
+    ctx.stroke();
 
     // Content
     ctx.fillStyle = '#38bdf8';
@@ -1187,7 +1255,7 @@ export class OfficeCanvasEngine {
     const boxW = Math.max(textW + 18, 64);
     const boxH = 16;
     const boxX = Math.max(10, Math.min(this.baseWidth - boxW - 10, anchorX - boxW / 2));
-    const boxY = anchorY + bob;
+    const boxY = Math.max(8, anchorY + bob);
 
     ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
     ctx.beginPath();
